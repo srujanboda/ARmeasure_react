@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Live Floor Plan Highlighter</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        #canvas-container {
+            position: relative;
+            border: 3px solid #333;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: 0.2s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .instructions {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .status-bar {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="toolbar">
+        <div class="status-bar" id="status">Step 1: Upload a floor plan image</div>
+        <input type="file" id="upload" accept="image/*" style="margin-bottom: 10px;">
+        <br>
+        <button class="btn btn-primary" onclick="finishRoom()">Save This Room</button>
+        <button class="btn btn-danger" onclick="clearAll()">Clear Everything</button>
+        <div class="instructions">
+            <strong>How to use:</strong> Click the corners of a room. It will highlight in <strong>blue</strong> as you
+            go. <br>
+            Once the room is covered, click "Save This Room". It will turn <strong>green</strong>.
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const upload = document.getElementById('upload');
+        const statusBar = document.getElementById('status');
+
+        let img = new Image();
+        let savedRooms = [];
+        let currentPoints = [];
+
+        upload.addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = (f) => {
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    statusBar.innerText = "Step 2: Click the corners of a room to highlight it";
+                    draw();
+                };
+                img.src = f.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!img.src) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            currentPoints.push({ x, y });
+            draw();
+        });
+
+        function finishRoom() {
+            if (currentPoints.length > 2) {
+                savedRooms.push({
+                    points: [...currentPoints],
+                    color: "rgba(40, 167, 69, 0.4)" // Green for saved rooms
+                });
+                currentPoints = [];
+                statusBar.innerText = "Room Saved! Start clicking the next room.";
+                draw();
+            } else {
+                alert("Please click at least 3 points to define a room area.");
+            }
+        }
+
+        function clearAll() {
+            savedRooms = [];
+            currentPoints = [];
+            draw();
+            statusBar.innerText = "Cleared. Start clicking to define a room.";
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (img.src) ctx.drawImage(img, 0, 0);
+
+            // 1. Draw already saved rooms (Green)
+            savedRooms.forEach(room => {
+                drawShape(room.points, room.color, "#28a745");
+            });
+
+            // 2. Draw the room currently being clicked (Live Blue Highlight)
+            if (currentPoints.length > 0) {
+                // Use a blue highlight for the "in-progress" room
+                drawShape(currentPoints, "rgba(0, 123, 255, 0.5)", "#007bff");
+
+                // Draw small dots at each click point
+                currentPoints.forEach(p => {
+                    ctx.fillStyle = "#007bff";
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+        }
+
+        function drawShape(points, fillColor, strokeColor) {
+            if (points.length < 1) return;
+
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+
+            // Only close and fill if we have at least 3 points
+            if (points.length > 2) {
+                ctx.closePath();
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+            }
+
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    </script>
+</body>
+
+</html>
