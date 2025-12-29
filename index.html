@@ -1,13 +1,30 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>temp-app</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>temp-app</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script>
+    window.onerror = function (message, source, lineno, colno, error) {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;color:red;z-index:99999;padding:20px;font-family:monospace;white-space:pre-wrap;overflow:auto;pointer-events:none;';
+      div.innerText = 'Error: ' + message + '\n\nSource: ' + source + ':' + lineno + ':' + colno + '\n\nStack: ' + (error ? error.stack : 'No stack');
+      document.body.appendChild(div);
+    };
+    window.onunhandledrejection = function (event) {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;color:red;z-index:99999;padding:20px;font-family:monospace;white-space:pre-wrap;overflow:auto;pointer-events:none;';
+      div.innerText = 'Unhandled Rejection: ' + event.reason;
+      document.body.appendChild(div);
+    };
+  </script>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>
