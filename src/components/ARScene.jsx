@@ -38,8 +38,10 @@ const ARScene = forwardRef((props, ref) => {
     useEffect(() => {
         initAR();
         return () => {
-            // Cleanup if needed (Three.js dispose)
-            // logicRef.current.sceneManager?.renderer.dispose();
+            // Cleanup
+            if (logicRef.current.sceneManager) {
+                logicRef.current.sceneManager.dispose();
+            }
         };
     }, []);
 
