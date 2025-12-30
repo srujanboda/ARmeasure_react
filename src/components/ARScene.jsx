@@ -30,7 +30,7 @@ const ARScene = forwardRef((props, ref) => {
             const current = logicRef.current.currentUnit;
             const next = units[(units.indexOf(current) + 1) % units.length];
             logicRef.current.currentUnit = next;
-            // logicRef.current.measureManager?.setUnit(next); // Assuming MeasureManager handles this or we just format
+            logicRef.current.measureManager?.setUnit(next);
             updateUI();
         }
     }));
@@ -65,7 +65,7 @@ const ARScene = forwardRef((props, ref) => {
         // 3. Listeners
         mgr.sceneManager.controller.addEventListener('select', handleTap);
         document.body.addEventListener('click', (e) => {
-            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') handleTap();
+            if (!e.target.closest('button') && !e.target.closest('input')) handleTap();
         });
     };
 

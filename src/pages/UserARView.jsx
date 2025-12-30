@@ -84,17 +84,19 @@ const UserARView = () => {
             </div>
 
             {/* Bottom Controls - Moved up slightly to avoid "STOP AR" */}
-            <div style={{ position: 'fixed', bottom: 80, width: '100%', display: 'flex', justifyContent: 'center', gap: 20, pointerEvents: 'auto' }}>
-                <button onClick={(e) => { e.stopPropagation(); arRef.current?.undo(); }} style={{ background: '#555', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
-                    Undo
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); arRef.current?.startNewLine(); }} style={{ background: '#007bff', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
-                    New Line
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); arRef.current?.reset(); }} style={{ background: '#dc3545', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
-                    Reset
-                </button>
-            </div>
+            {stats.count > 0 && (
+                <div style={{ position: 'fixed', bottom: 80, width: '100%', display: 'flex', justifyContent: 'center', gap: 20, pointerEvents: 'auto' }}>
+                    <button onClick={(e) => { e.stopPropagation(); arRef.current?.undo(); }} style={{ background: '#555', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
+                        Undo
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); arRef.current?.startNewLine(); }} style={{ background: '#007bff', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
+                        New Line
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); arRef.current?.reset(); }} style={{ background: '#dc3545', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
+                        Reset
+                    </button>
+                </div>
+            )}
 
             {/* Plan Parser Modal */}
             {showPlanParser && (
