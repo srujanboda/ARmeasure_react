@@ -131,7 +131,27 @@ export class MeasureManager {
     // I'll add `currentUnit` setter.
     setUnit(unit) {
         this.currentUnit = unit;
-        this.updateLine(); // Redraw labels
+
+        // 1. Update current line labels
+        this.updateLine();
+
+        // 2. Update all saved chains
+        this.allChains.forEach(chain => {
+            // Remove old labels
+            chain.labels.forEach(l => this.scene.remove(l));
+            chain.labels = [];
+
+            // Add new labels
+            for (let i = 1; i < chain.points.length; i++) {
+                const d = chain.points[i - 1].distanceTo(chain.points[i]);
+                const mid = new THREE.Vector3().lerpVectors(chain.points[i - 1], chain.points[i], 0.5);
+                const label = this.createLabel(d);
+                label.position.copy(mid);
+                label.scale.set(0.25, 0.1, 1);
+                this.scene.add(label);
+                chain.labels.push(label);
+            }
+        });
     }
 
     createLabelSprite(dist) {

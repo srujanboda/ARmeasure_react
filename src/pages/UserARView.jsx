@@ -47,7 +47,7 @@ const UserARView = () => {
             }}>
                 {/* Unit Change Button */}
                 <button
-                    onClick={() => arRef.current?.cycleUnit()}
+                    onClick={(e) => { e.stopPropagation(); arRef.current?.cycleUnit(); }}
                     style={{
                         width: 50,
                         height: 50,
@@ -66,7 +66,7 @@ const UserARView = () => {
 
                 {/* Plan Parser Button */}
                 <button
-                    onClick={() => setShowPlanParser(true)}
+                    onClick={(e) => { e.stopPropagation(); setShowPlanParser(true); }}
                     style={{
                         width: 50,
                         height: 50,
@@ -85,13 +85,13 @@ const UserARView = () => {
 
             {/* Bottom Controls - Moved up slightly to avoid "STOP AR" */}
             <div style={{ position: 'fixed', bottom: 80, width: '100%', display: 'flex', justifyContent: 'center', gap: 20, pointerEvents: 'auto' }}>
-                <button onClick={() => arRef.current?.undo()} style={{ background: '#555', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
+                <button onClick={(e) => { e.stopPropagation(); arRef.current?.undo(); }} style={{ background: '#555', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
                     Undo
                 </button>
-                <button onClick={() => arRef.current?.startNewLine()} style={{ background: '#007bff', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
+                <button onClick={(e) => { e.stopPropagation(); arRef.current?.startNewLine(); }} style={{ background: '#007bff', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
                     New Line
                 </button>
-                <button onClick={() => arRef.current?.reset()} style={{ background: '#dc3545', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
+                <button onClick={(e) => { e.stopPropagation(); arRef.current?.reset(); }} style={{ background: '#dc3545', borderRadius: 20, padding: '10px 20px', color: 'white', border: 'none' }}>
                     Reset
                 </button>
             </div>
