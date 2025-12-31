@@ -1,11 +1,32 @@
 import React, { useRef, useState, useEffect } from 'react';
 
-const PlanParser = () => {
+const PlanParser = ({ role = 'reviewer', sendData, remoteData }) => {
     const canvasRef = useRef(null);
     const [image, setImage] = useState(null);
     const [savedRooms, setSavedRooms] = useState([]);
     const [currentPoints, setCurrentPoints] = useState([]);
     const [status, setStatus] = useState("Step 1: Upload a floor plan image");
+
+    // Handle Remote Data
+    useEffect(() => {
+        if (!remoteData) return;
+
+        if (remoteData.type === 'PLAN_IMAGE') {
+            const img = new Image();
+            img.onload = () => {
+                setImage(img);
+                setStatus("Shared Plan Received");
+            };
+            img.src = remoteData.data;
+        } else if (remoteData.type === 'PLAN_SYNC') {
+            setSavedRooms(remoteData.savedRooms || []);
+            setCurrentPoints(remoteData.currentPoints || []);
+            setStatus(role === 'reviewer' ? "Synced with User" : "Reviewer is marking the plan...");
+        } else if (remoteData.type === 'PLAN_CLEAR') {
+            setSavedRooms([]);
+            setCurrentPoints([]);
+        }
+    }, [remoteData, role]);
 
     useEffect(() => {
         draw();
@@ -16,49 +37,61 @@ const PlanParser = () => {
         if (file) {
             const reader = new FileReader();
             reader.onload = (f) => {
+                const base64 = f.target.result;
                 const img = new Image();
                 img.onload = () => {
                     setImage(img);
-                    setStatus("Step 2: Click the corners of a room to highlight it");
+                    setStatus("Image Uploaded & Shared");
+                    // Broadcast image
+                    sendData?.({ type: 'PLAN_IMAGE', data: base64 });
                 };
-                img.src = f.target.result;
+                img.src = base64;
             };
             reader.readAsDataURL(file);
         }
     };
 
     const handleCanvasClick = (e) => {
-        if (!image) return;
+        if (!image || role !== 'reviewer') return;
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
-        // Scale logic if canvas display size differs from actual size
-        // For simplicity, we assume canvas.width = img.width (set in draw)
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
 
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
 
-        setCurrentPoints(prev => [...prev, { x, y }]);
+        const newPoints = [...currentPoints, { x, y }];
+        setCurrentPoints(newPoints);
+
+        // Broadcast change
+        sendData?.({ type: 'PLAN_SYNC', currentPoints: newPoints, savedRooms });
     };
 
     const finishRoom = () => {
+        if (role !== 'reviewer') return;
         if (currentPoints.length > 2) {
-            setSavedRooms(prev => [...prev, {
+            const newSaved = [...savedRooms, {
                 points: [...currentPoints],
                 color: "rgba(40, 167, 69, 0.4)"
-            }]);
+            }];
+            setSavedRooms(newSaved);
             setCurrentPoints([]);
-            setStatus("Room Saved! Start clicking the next room.");
+            setStatus("Room Saved! Shared with User.");
+
+            // Broadcast
+            sendData?.({ type: 'PLAN_SYNC', currentPoints: [], savedRooms: newSaved });
         } else {
             alert("Please click at least 3 points to define a room area.");
         }
     };
 
     const clearAll = () => {
+        if (role !== 'reviewer') return;
         setSavedRooms([]);
         setCurrentPoints([]);
-        setStatus("Cleared. Start clicking to define a room.");
+        setStatus("Cleared.");
+        sendData?.({ type: 'PLAN_CLEAR' });
     };
 
     const draw = () => {
@@ -67,7 +100,6 @@ const PlanParser = () => {
         const ctx = canvas.getContext('2d');
 
         if (image) {
-            // Resize canvas to match image logic
             if (canvas.width !== image.width || canvas.height !== image.height) {
                 canvas.width = image.width;
                 canvas.height = image.height;
@@ -75,21 +107,19 @@ const PlanParser = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(image, 0, 0);
         } else {
-            // Default size if no image
             canvas.width = 800;
             canvas.height = 600;
             ctx.fillStyle = '#f0f0f0';
             ctx.fillRect(0, 0, 800, 600);
             ctx.fillStyle = '#666';
             ctx.textAlign = 'center';
+            ctx.font = '20px Arial';
             ctx.fillText("Upload Floor Plan", 400, 300);
             return;
         }
 
-        // 1. Draw Saved
         savedRooms.forEach(room => drawShape(ctx, room.points, room.color, "#28a745"));
 
-        // 2. Draw Current
         if (currentPoints.length > 0) {
             drawShape(ctx, currentPoints, "rgba(0, 123, 255, 0.5)", "#007bff");
             currentPoints.forEach(p => {
@@ -119,15 +149,25 @@ const PlanParser = () => {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div className="toolbar" style={{ background: 'white', padding: 20, borderRadius: 8, marginBottom: 20, color: 'black' }}>
-                <div style={{ fontWeight: 'bold', color: '#007bff', marginBottom: 10 }}>{status}</div>
-                <input type="file" accept="image/*" onChange={handleUpload} style={{ marginBottom: 10 }} />
-                <br />
-                <button onClick={finishRoom} style={{ backgroundColor: '#007bff', marginRight: 10 }}>Save Room</button>
-                <button onClick={clearAll} style={{ backgroundColor: '#dc3545' }}>Clear All</button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+            <div className="toolbar" style={{ background: '#f8f9fa', padding: 15, borderRadius: 12, marginBottom: 20, color: 'black', width: '100%', maxWidth: 600 }}>
+                <div style={{ fontWeight: 'bold', color: '#007bff', marginBottom: 10, textAlign: 'center' }}>{status}</div>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <input type="file" accept="image/*" onChange={handleUpload} style={{ fontSize: 12 }} />
+                    {role === 'reviewer' && (
+                        <>
+                            <button onClick={finishRoom} style={{ backgroundColor: '#007bff', padding: '8px 16px', borderRadius: 8, color: 'white' }}>Save Room</button>
+                            <button onClick={clearAll} style={{ backgroundColor: '#dc3545', padding: '8px 16px', borderRadius: 8, color: 'white' }}>Clear</button>
+                        </>
+                    )}
+                </div>
+                {role === 'user' && (
+                    <div style={{ fontSize: 12, color: '#666', marginTop: 10, textAlign: 'center' }}>
+                        You can upload the plan. Marking is done by the reviewer.
+                    </div>
+                )}
             </div>
-            <div style={{ border: '2px solid #333', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ border: '2px solid #ddd', borderRadius: 8, overflow: 'hidden', maxWidth: '100%', maxHeight: '70vh', overflowY: 'auto' }}>
                 <canvas
                     ref={canvasRef}
                     onMouseDown={handleCanvasClick}
@@ -135,7 +175,7 @@ const PlanParser = () => {
                         display: 'block',
                         maxWidth: '100%',
                         height: 'auto',
-                        cursor: 'crosshair'
+                        cursor: role === 'reviewer' ? 'crosshair' : 'default'
                     }}
                 />
             </div>

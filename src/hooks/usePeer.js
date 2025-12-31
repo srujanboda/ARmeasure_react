@@ -6,14 +6,13 @@ export const usePeer = (role, code) => {
     const [call, setCall] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
     const [status, setStatus] = useState("Initializing...");
+    const [conn, setConn] = useState(null);
+    const [data, setData] = useState(null);
     const localStreamRef = useRef(null);
 
     useEffect(() => {
         if (!code) return;
 
-        // Create Peer
-        // Reviewer ID: code-reviewer
-        // User ID: code-user
         const myId = role === 'reviewer' ? `${code}-reviewer` : `${code}-user`;
         const targetId = role === 'reviewer' ? `${code}-user` : `${code}-reviewer`;
 
@@ -27,15 +26,20 @@ export const usePeer = (role, code) => {
 
             if (role === 'user') {
                 startCall(p, targetId);
+                // Initiate data connection
+                const dataConn = p.connect(targetId);
+                setupDataEvents(dataConn);
             }
+        });
+
+        p.on('connection', (dataConn) => {
+            console.log("Incoming data connection from:", dataConn.peer);
+            setupDataEvents(dataConn);
         });
 
         p.on('call', (incomingCall) => {
             console.log("Incoming call...", incomingCall);
-            setStatus(`Incoming call from ${incomingCall.peer}...`);
-            // Answer automatically (or prompt)
-            // Reviewer needs a local stream to answer, but for receiving only, we can pass null
-            // However, PeerJS requires a stream. Let's get audio-only stream for reviewer.
+            // ... (rest of call answering logic remains same)
             navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then(stream => {
                     localStreamRef.current = stream;
@@ -71,18 +75,33 @@ export const usePeer = (role, code) => {
         };
     }, [role, code]);
 
+    const setupDataEvents = (dataConn) => {
+        setConn(dataConn);
+        dataConn.on('data', (receivedData) => {
+            console.log("Data received:", receivedData?.type);
+            setData(receivedData);
+        });
+        dataConn.on('open', () => {
+            console.log("Data connection open with:", dataConn.peer);
+        });
+        dataConn.on('close', () => {
+            setConn(null);
+        });
+    };
+
+    const sendData = (payload) => {
+        if (conn && conn.open) {
+            conn.send(payload);
+        } else {
+            console.warn("Cannot send data: connection not open");
+        }
+    };
+    // ... startCall and setupCallEvents remain unchanged ...
     const startCall = async (p, targetId) => {
         setStatus(`Calling ${targetId}...`);
         try {
-            // Get Local Stream (Audio + Screen/Video)
-            // For AR User: We need to share the AR Canvas.
-            // But AR Canvas on mobile is tricky to capture if it's WebXR.
-            // Fallback: Get User Media (Camera) might fail if WebXR is active.
-            // Strategy: Just Audio for now? Or try sharing screen.
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
             localStreamRef.current = stream;
-
-            // Call
             const outgoingCall = p.call(targetId, stream);
             setupCallEvents(outgoingCall);
         } catch (e) {
@@ -114,17 +133,14 @@ export const usePeer = (role, code) => {
     };
 
     const endCall = () => {
-        if (call) {
-            call.close();
-        }
-        if (peer) {
-            peer.destroy();
-        }
+        if (call) call.close();
+        if (peer) peer.destroy();
         setCall(null);
         setPeer(null);
         setRemoteStream(null);
+        setConn(null);
         setStatus("Call Ended Manually");
     };
 
-    return { peer, call, remoteStream, status, endCall };
+    return { peer, call, remoteStream, status, endCall, sendData, data };
 };

@@ -7,7 +7,7 @@ const ReviewerDashboard = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const code = searchParams.get('code');
-    const { status, remoteStream, endCall } = usePeer('reviewer', code);
+    const { status, remoteStream, endCall, sendData, data: remoteData } = usePeer('reviewer', code);
     const videoRef = useRef(null);
 
     useEffect(() => {
@@ -63,7 +63,7 @@ const ReviewerDashboard = () => {
                 {/* Plan Column */}
                 <div>
                     <h3>Floor Plan Verification</h3>
-                    <PlanParser />
+                    <PlanParser role="reviewer" sendData={sendData} remoteData={remoteData} />
                 </div>
             </div>
         </div>
