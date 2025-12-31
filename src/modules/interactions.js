@@ -39,18 +39,22 @@ export class InteractionManager {
     update(frame, session) {
         if (!session) return;
 
-        // 1. Initialize hit test source using 'viewer' space (offset from camera)
+        // 1. Initialize hit test source using 'viewer' space
         if (!this.hitTestSource && !this.isRequestingHitTest) {
             this.isRequestingHitTest = true;
 
+            // Wait a few frames for session to stabilize if needed
             session.requestReferenceSpace('viewer').then((referenceSpace) => {
                 session.requestHitTestSource({ space: referenceSpace }).then((source) => {
                     this.hitTestSource = source;
                     this.isRequestingHitTest = false;
                     console.log("Hit test source created with 'viewer' space");
+                }).catch(err => {
+                    console.error("Hit test source request failed:", err);
+                    this.isRequestingHitTest = false;
                 });
             }).catch(err => {
-                console.error("Error requesting hit test source:", err);
+                console.error("Viewer reference space request failed:", err);
                 this.isRequestingHitTest = false;
             });
         }

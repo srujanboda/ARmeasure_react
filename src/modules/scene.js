@@ -13,7 +13,7 @@ export class SceneManager {
         this.controller = null;
     }
 
-    init() {
+    init(overlayRoot) {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
@@ -32,7 +32,7 @@ export class SceneManager {
         const arButton = ARButton.createButton(this.renderer, {
             requiredFeatures: ['hit-test'],
             optionalFeatures: ['dom-overlay'],
-            domOverlay: { root: document.body }
+            domOverlay: { root: overlayRoot || document.body }
         });
         arButton.classList.add('custom-ar-button');
         document.body.appendChild(arButton);

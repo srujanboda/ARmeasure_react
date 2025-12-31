@@ -17,14 +17,15 @@ export const usePeer = (role, code) => {
         const myId = role === 'reviewer' ? `${code}-reviewer` : `${code}-user`;
         const targetId = role === 'reviewer' ? `${code}-user` : `${code}-reviewer`;
 
+        setStatus("Connecting to Server...");
         const p = new Peer(myId);
 
         p.on('open', (id) => {
-            setStatus(`Connected as ${id}`);
+            console.log("Peer opened with ID:", id);
+            setStatus(role === 'reviewer' ? "Waiting for someone to join..." : "Ready to call...");
             setPeer(p);
 
             if (role === 'user') {
-                // User calls Reviewer
                 startCall(p, targetId);
             }
         });
@@ -48,9 +49,21 @@ export const usePeer = (role, code) => {
                 });
         });
 
+        p.on('disconnected', () => {
+            setStatus("Disconnected from server. Retrying...");
+            p.reconnect();
+        });
+
+        p.on('close', () => {
+            setStatus("Connection closed.");
+        });
+
         p.on('error', (err) => {
             console.error("Peer Error:", err);
             setStatus(`Error: ${err.type}`);
+            if (err.type === 'peer-unavailable') {
+                setStatus(role === 'user' ? "Reviewer not online yet..." : "User not found...");
+            }
         });
 
         return () => {

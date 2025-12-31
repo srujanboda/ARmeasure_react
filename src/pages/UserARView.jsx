@@ -52,6 +52,7 @@ const UserARView = () => {
                 onSessionEnd={() => {
                     setArActive(false);
                 }}
+                overlayRoot={uiRef.current}
             />
 
             {/* Main UI Container - Hooks generic beforexrselect prevention */}

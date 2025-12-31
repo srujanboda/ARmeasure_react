@@ -60,7 +60,7 @@ const ARScene = forwardRef((props, ref) => {
                 if (props.onSessionEnd) props.onSessionEnd();
             }
         );
-        mgr.sceneManager.init();
+        mgr.sceneManager.init(props.overlayRoot);
 
         // 2. Managers
         mgr.measureManager = new MeasureManager(mgr.sceneManager.scene);
