@@ -7,7 +7,7 @@ const ReviewerDashboard = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const code = searchParams.get('code');
-    const { status, remoteStream, endCall, sendData, data: remoteData } = usePeer('reviewer', code);
+    const { status, remoteStream, endCall, sendData, data: remoteData, isDataConnected } = usePeer('reviewer', code);
     const videoRef = useRef(null);
 
     useEffect(() => {

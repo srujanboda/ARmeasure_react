@@ -8,6 +8,7 @@ export const usePeer = (role, code) => {
     const [status, setStatus] = useState("Initializing...");
     const [conn, setConn] = useState(null);
     const [data, setData] = useState(null);
+    const [isDataConnected, setIsDataConnected] = useState(false);
     const localStreamRef = useRef(null);
 
     useEffect(() => {
@@ -39,7 +40,6 @@ export const usePeer = (role, code) => {
 
         p.on('call', (incomingCall) => {
             console.log("Incoming call...", incomingCall);
-            // ... (rest of call answering logic remains same)
             navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then(stream => {
                     localStreamRef.current = stream;
@@ -83,9 +83,15 @@ export const usePeer = (role, code) => {
         });
         dataConn.on('open', () => {
             console.log("Data connection open with:", dataConn.peer);
+            setIsDataConnected(true);
         });
         dataConn.on('close', () => {
             setConn(null);
+            setIsDataConnected(false);
+        });
+        dataConn.on('error', (err) => {
+            console.error("Data connection error:", err);
+            setIsDataConnected(false);
         });
     };
 
@@ -96,7 +102,7 @@ export const usePeer = (role, code) => {
             console.warn("Cannot send data: connection not open");
         }
     };
-    // ... startCall and setupCallEvents remain unchanged ...
+
     const startCall = async (p, targetId) => {
         setStatus(`Calling ${targetId}...`);
         try {
@@ -139,8 +145,9 @@ export const usePeer = (role, code) => {
         setPeer(null);
         setRemoteStream(null);
         setConn(null);
+        setIsDataConnected(false);
         setStatus("Call Ended Manually");
     };
 
-    return { peer, call, remoteStream, status, endCall, sendData, data };
+    return { peer, call, remoteStream, status, endCall, sendData, data, isDataConnected };
 };
