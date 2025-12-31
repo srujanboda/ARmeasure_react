@@ -8,7 +8,7 @@ const UserARView = () => {
     const [searchParams] = useSearchParams();
     const code = searchParams.get('code');
     const [arActive, setArActive] = useState(false);
-    const { status, endCall, sendData, data: remoteData } = usePeer('user', code);
+    const { status, endCall, sendData, data: remoteData, isDataConnected } = usePeer('user', code);
     const navigate = useNavigate();
 
     const handleEndCall = () => {
@@ -228,7 +228,7 @@ const UserARView = () => {
                         so it might look a bit plain inside this premium modal, but acceptable for now. 
                     */}
                     <div style={{ background: 'white', borderRadius: 16, padding: 20, maxWidth: 800, margin: '0 auto' }}>
-                        <PlanParser role="user" sendData={sendData} remoteData={remoteData} />
+                        <PlanParser role="user" sendData={sendData} remoteData={remoteData} isDataConnected={isDataConnected} />
                     </div>
                 </div>
             )}

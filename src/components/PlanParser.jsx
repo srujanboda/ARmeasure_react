@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
-const PlanParser = ({ role = 'reviewer', sendData, remoteData }) => {
+const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected = false }) => {
     const canvasRef = useRef(null);
     const [image, setImage] = useState(null);
     const [imageBase64, setImageBase64] = useState(null); // Store base64 for saving/resending
@@ -9,6 +9,60 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData }) => {
     const [status, setStatus] = useState("Step 1: Upload a floor plan image");
     const [isSaved, setIsSaved] = useState(false);
     const syncTimeoutRef = useRef(null);
+    const pendingImageRef = useRef(null); // Store image to send when connection is ready
+    const retryTimeoutRef = useRef(null);
+
+    // Load persisted data from localStorage on mount
+    useEffect(() => {
+        const storageKey = `planParser_${role}`;
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.imageBase64) {
+                    const img = new Image();
+                    img.onload = () => {
+                        setImage(img);
+                        setImageBase64(data.imageBase64);
+                        setIsSaved(true);
+                        setStatus(role === 'user' ? "Loaded saved plan" : "Plan loaded");
+                        
+                        // If user role and connection is ready, auto-send to reviewer
+                        if (role === 'user' && isDataConnected && sendData) {
+                            console.log("Auto-sending saved image to reviewer");
+                            sendData({ type: 'PLAN_IMAGE', data: data.imageBase64 });
+                            setStatus("Saved plan loaded and sent to reviewer");
+                        } else if (role === 'user') {
+                            // Store for sending when connection is ready
+                            pendingImageRef.current = data.imageBase64;
+                        }
+                    };
+                    img.src = data.imageBase64;
+                }
+                if (data.savedRooms) {
+                    setSavedRooms(data.savedRooms);
+                }
+                if (data.currentPoints) {
+                    setCurrentPoints(data.currentPoints);
+                }
+            } catch (e) {
+                console.error("Error loading saved data:", e);
+            }
+        }
+    }, [role, isDataConnected, sendData]);
+
+    // Persist data to localStorage whenever it changes
+    useEffect(() => {
+        const storageKey = `planParser_${role}`;
+        const dataToSave = {
+            imageBase64,
+            savedRooms,
+            currentPoints
+        };
+        if (imageBase64 || savedRooms.length > 0 || currentPoints.length > 0) {
+            localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+        }
+    }, [imageBase64, savedRooms, currentPoints, role]);
 
     // Handle Remote Data - Real-time sync
     useEffect(() => {
@@ -43,16 +97,39 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData }) => {
         draw();
     }, [image, savedRooms, currentPoints]);
 
+    // Retry sending image when connection becomes ready
+    useEffect(() => {
+        if (isDataConnected && pendingImageRef.current && sendData) {
+            console.log("Connection ready, sending pending image");
+            const imageToSend = pendingImageRef.current;
+            pendingImageRef.current = null;
+            sendData({ type: 'PLAN_IMAGE', data: imageToSend });
+            setStatus(role === 'user' ? "Image saved and sent to reviewer" : "Plan received from user");
+            if (retryTimeoutRef.current) {
+                clearTimeout(retryTimeoutRef.current);
+                retryTimeoutRef.current = null;
+            }
+        }
+    }, [isDataConnected, sendData, role]);
+
     // Save and send image to reviewer
     const saveAndSendImage = useCallback((base64, img) => {
         setImage(img);
         setImageBase64(base64);
         setIsSaved(true);
-        setStatus("Image saved and sent to reviewer");
         
-        // Automatically send to reviewer
-        sendData?.({ type: 'PLAN_IMAGE', data: base64 });
-    }, [sendData]);
+        // Store pending image if connection not ready
+        if (!isDataConnected || !sendData) {
+            console.log("Connection not ready, storing image for later");
+            pendingImageRef.current = base64;
+            setStatus("Image saved. Waiting for connection to reviewer...");
+        } else {
+            // Connection is ready, send immediately
+            console.log("Connection ready, sending image immediately");
+            sendData({ type: 'PLAN_IMAGE', data: base64 });
+            setStatus("Image saved and sent to reviewer");
+        }
+    }, [sendData, isDataConnected]);
 
     const handleUpload = (e) => {
         const file = e.target.files[0];
@@ -75,9 +152,14 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData }) => {
     const handleSave = () => {
         if (imageBase64 && image) {
             setIsSaved(true);
-            setStatus("Image saved and sent to reviewer");
             // Resend to reviewer
-            sendData?.({ type: 'PLAN_IMAGE', data: imageBase64 });
+            if (isDataConnected && sendData) {
+                sendData({ type: 'PLAN_IMAGE', data: imageBase64 });
+                setStatus("Image saved and sent to reviewer");
+            } else {
+                pendingImageRef.current = imageBase64;
+                setStatus("Image saved. Waiting for connection to reviewer...");
+            }
         } else {
             alert("Please upload an image first");
         }
@@ -143,11 +225,14 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData }) => {
         sendData?.({ type: 'PLAN_CLEAR' });
     };
 
-    // Cleanup timeout on unmount
+    // Cleanup timeouts on unmount
     useEffect(() => {
         return () => {
             if (syncTimeoutRef.current) {
                 clearTimeout(syncTimeoutRef.current);
+            }
+            if (retryTimeoutRef.current) {
+                clearTimeout(retryTimeoutRef.current);
             }
         };
     }, []);
