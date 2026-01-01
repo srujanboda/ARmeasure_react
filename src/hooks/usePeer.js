@@ -11,6 +11,8 @@ export const usePeer = (role, code) => {
     const [isDataConnected, setIsDataConnected] = useState(false);
     const localStreamRef = useRef(null);
 
+    const [facingMode, setFacingMode] = useState('environment');
+
     useEffect(() => {
         if (!code) return;
 
@@ -40,7 +42,10 @@ export const usePeer = (role, code) => {
 
         p.on('call', (incomingCall) => {
             console.log("Incoming call...", incomingCall);
-            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+            navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: { facingMode: { ideal: facingMode } }
+            })
                 .then(stream => {
                     localStreamRef.current = stream;
                     incomingCall.answer(stream);
@@ -106,13 +111,51 @@ export const usePeer = (role, code) => {
     const startCall = async (p, targetId) => {
         setStatus(`Calling ${targetId}...`);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: { facingMode: { ideal: facingMode } }
+            });
             localStreamRef.current = stream;
             const outgoingCall = p.call(targetId, stream);
             setupCallEvents(outgoingCall);
         } catch (e) {
             console.error("Media Error:", e);
             setStatus("Media Error: " + e.message);
+        }
+    };
+
+    const toggleCamera = async () => {
+        const nextMode = facingMode === 'user' ? 'environment' : 'user';
+        setFacingMode(nextMode);
+
+        try {
+            // Stop old tracks
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+
+            // Get new stream
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: { facingMode: { ideal: nextMode } }
+            });
+            localStreamRef.current = newStream;
+
+            // If we have an active call, replace the tracks
+            if (call && call.peerConnection) {
+                const videoTrack = newStream.getVideoTracks()[0];
+                const senders = call.peerConnection.getSenders();
+                const videoSender = senders.find(s => s.track?.kind === 'video');
+
+                if (videoSender) {
+                    videoSender.replaceTrack(videoTrack);
+                }
+            }
+
+            setStatus(`Switched to ${nextMode} camera`);
+        } catch (e) {
+            console.error("Error switching camera:", e);
+            setStatus("Camera switch error: " + e.message);
         }
     };
 
@@ -149,5 +192,5 @@ export const usePeer = (role, code) => {
         setStatus("Call Ended Manually");
     };
 
-    return { peer, call, remoteStream, status, endCall, sendData, data, isDataConnected };
+    return { peer, call, remoteStream, status, endCall, sendData, data, isDataConnected, toggleCamera, facingMode };
 };

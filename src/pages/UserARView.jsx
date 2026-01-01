@@ -8,7 +8,7 @@ const UserARView = () => {
     const [searchParams] = useSearchParams();
     const code = searchParams.get('code');
     const [arActive, setArActive] = useState(false);
-    const { status, endCall, sendData, data: remoteData, isDataConnected } = usePeer('user', code);
+    const { status, endCall, sendData, data: remoteData, isDataConnected, toggleCamera } = usePeer('user', code);
     const navigate = useNavigate();
 
     const handleEndCall = () => {
@@ -138,6 +138,21 @@ const UserARView = () => {
                         style={{ width: 56, height: 56, borderRadius: '50%', fontSize: 10 }}
                     >
                         <span style={{ fontSize: 10, fontWeight: 'bold' }}>UNIT</span>
+                    </button>
+
+                    {/* Camera Switch */}
+                    <button
+                        className="glass-btn"
+                        onClick={(e) => { e.stopPropagation(); toggleCamera(); }}
+                        style={{ width: 56, height: 56, borderRadius: '50%' }}
+                        title="Switch Camera"
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 19c-4.97 0-9-4.03-9-9s4.03-9 9-9c3.84 0 7.15 2.41 8.44 5.8"></path>
+                            <path d="M22 6l-3 4-3-4"></path>
+                            <path d="M13 5c4.97 0 9 4.03 9 9s-4.03 9-9 9c-3.84 0-7.15-2.41-8.44-5.8"></path>
+                            <path d="M2 18l3-4 3 4"></path>
+                        </svg>
                     </button>
 
                     {/* Plan Parser */}
