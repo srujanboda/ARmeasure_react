@@ -22,7 +22,7 @@ const ReviewerDashboard = () => {
     };
 
     return (
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: '20px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h1>Reviewer Dashboard</h1>
                 <div style={{ display: 'flex', gap: 15, alignItems: 'center' }}>
