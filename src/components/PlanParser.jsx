@@ -26,7 +26,7 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                         setImageBase64(data.imageBase64);
                         setIsSaved(true);
                         setStatus(role === 'user' ? "Loaded saved plan" : "Plan loaded");
-                        
+
                         // If user role and connection is ready, auto-send to reviewer
                         if (role === 'user' && isDataConnected && sendData) {
                             console.log("Auto-sending saved image to reviewer");
@@ -117,7 +117,7 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         setImage(img);
         setImageBase64(base64);
         setIsSaved(true);
-        
+
         // Store pending image if connection not ready
         if (!isDataConnected || !sendData) {
             console.log("Connection not ready, storing image for later");
@@ -136,13 +136,41 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         if (file) {
             const reader = new FileReader();
             reader.onload = (f) => {
-                const base64 = f.target.result;
+                const rawBase64 = f.target.result;
                 const img = new Image();
                 img.onload = () => {
-                    // Auto-save: immediately save and send to reviewer
-                    saveAndSendImage(base64, img);
+                    // Compress Image
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1000;
+                    const MAX_HEIGHT = 1000;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    const compressedImg = new Image();
+                    compressedImg.onload = () => {
+                        saveAndSendImage(compressedBase64, compressedImg);
+                    };
+                    compressedImg.src = compressedBase64;
                 };
-                img.src = base64;
+                img.src = rawBase64;
             };
             reader.readAsDataURL(file);
         }
@@ -298,12 +326,12 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                     <input type="file" accept="image/*" onChange={handleUpload} style={{ fontSize: 12 }} />
                     {role === 'user' && image && (
-                        <button 
-                            onClick={handleSave} 
-                            style={{ 
-                                backgroundColor: isSaved ? '#28a745' : '#007bff', 
-                                padding: '8px 16px', 
-                                borderRadius: 8, 
+                        <button
+                            onClick={handleSave}
+                            style={{
+                                backgroundColor: isSaved ? '#28a745' : '#007bff',
+                                padding: '8px 16px',
+                                borderRadius: 8,
                                 color: 'white',
                                 border: 'none',
                                 cursor: 'pointer'
@@ -337,14 +365,12 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                     </div>
                 )}
             </div>
-            <div style={{ border: '2px solid #ddd', borderRadius: 8, overflow: 'hidden', maxWidth: '100%', maxHeight: '70vh', overflowY: 'auto' }}>
+            <div style={{ border: '2px solid #ddd', borderRadius: 8, overflow: 'auto', width: '100%', maxHeight: '70vh' }}>
                 <canvas
                     ref={canvasRef}
                     onMouseDown={handleCanvasClick}
                     style={{
                         display: 'block',
-                        maxWidth: '100%',
-                        height: 'auto',
                         cursor: role === 'reviewer' ? 'crosshair' : 'default'
                     }}
                 />

@@ -40,7 +40,7 @@ export const usePeer = (role, code) => {
 
         p.on('call', (incomingCall) => {
             console.log("Incoming call...", incomingCall);
-            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
                 .then(stream => {
                     localStreamRef.current = stream;
                     incomingCall.answer(stream);
@@ -106,7 +106,7 @@ export const usePeer = (role, code) => {
     const startCall = async (p, targetId) => {
         setStatus(`Calling ${targetId}...`);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
             localStreamRef.current = stream;
             const outgoingCall = p.call(targetId, stream);
             setupCallEvents(outgoingCall);
