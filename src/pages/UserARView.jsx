@@ -8,7 +8,7 @@ const UserARView = () => {
     const [searchParams] = useSearchParams();
     const code = searchParams.get('code');
     const [arActive, setArActive] = useState(false);
-    const { status, endCall, sendData, data: remoteData, isDataConnected, toggleCamera } = usePeer('user', code);
+    const { status, endCall, sendData, data: remoteData, isDataConnected, toggleCamera } = usePeer('user', code, arActive);
     const navigate = useNavigate();
 
     const handleEndCall = () => {

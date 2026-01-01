@@ -90,6 +90,15 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
             setSavedRooms([]);
             setCurrentPoints([]);
             setStatus("Plan cleared");
+        } else if (remoteData.type === 'PLAN_REMOVE_IMAGE') {
+            setImage(null);
+            setImageBase64(null);
+            setSavedRooms([]);
+            setCurrentPoints([]);
+            setStatus("Image removed by other participant");
+            setIsSaved(false);
+            const storageKey = `planParser_${role}`;
+            localStorage.removeItem(storageKey);
         }
     }, [remoteData, role]);
 
@@ -253,6 +262,24 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         sendData?.({ type: 'PLAN_CLEAR' });
     };
 
+    const handleClearImage = () => {
+        if (window.confirm("Are you sure you want to remove the image and all markings?")) {
+            setImage(null);
+            setImageBase64(null);
+            setSavedRooms([]);
+            setCurrentPoints([]);
+            setStatus("Image removed");
+            setIsSaved(false);
+
+            const storageKey = `planParser_${role}`;
+            localStorage.removeItem(storageKey);
+
+            if (isDataConnected && sendData) {
+                sendData({ type: 'PLAN_REMOVE_IMAGE' });
+            }
+        }
+    };
+
     // Cleanup timeouts on unmount
     useEffect(() => {
         return () => {
@@ -345,6 +372,15 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                         <>
                             <button onClick={finishRoom} style={{ backgroundColor: '#007bff', padding: '8px 16px', borderRadius: 8, color: 'white', border: 'none', cursor: 'pointer' }}>Save Room</button>
                             <button onClick={clearAll} style={{ backgroundColor: '#dc3545', padding: '8px 16px', borderRadius: 8, color: 'white', border: 'none', cursor: 'pointer' }}>Clear</button>
+                            {image && (
+                                <button
+                                    onClick={handleClearImage}
+                                    style={{ backgroundColor: '#ff4d4d', padding: '8px 16px', borderRadius: 8, color: 'white', border: 'none', cursor: 'pointer' }}
+                                    title="Remove image and markings"
+                                >
+                                    Remove Image
+                                </button>
+                            )}
                         </>
                     )}
                 </div>
@@ -365,13 +401,39 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                     </div>
                 )}
             </div>
-            <div style={{ border: '2px solid #ddd', borderRadius: 8, overflow: 'auto', width: '100%', maxHeight: '70vh' }}>
+            <div style={{
+                border: '2px solid #ddd',
+                borderRadius: 8,
+                overflow: 'auto',
+                width: '100%',
+                maxHeight: '70vh',
+                position: 'relative',
+                background: '#eee'
+            }} className="plan-canvas-container">
+                <style>{`
+                .plan-canvas-container::-webkit-scrollbar {
+                    width: 10px;
+                    height: 10px;
+                }
+                .plan-canvas-container::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 5px;
+                }
+                .plan-canvas-container::-webkit-scrollbar-thumb {
+                    background: #888;
+                    border-radius: 5px;
+                }
+                .plan-canvas-container::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+            `}</style>
                 <canvas
                     ref={canvasRef}
                     onMouseDown={handleCanvasClick}
                     style={{
                         display: 'block',
-                        cursor: role === 'reviewer' ? 'crosshair' : 'default'
+                        cursor: role === 'reviewer' ? 'crosshair' : 'default',
+                        margin: '0 auto'
                     }}
                 />
             </div>

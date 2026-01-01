@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Peer from 'peerjs';
 
-export const usePeer = (role, code) => {
+export const usePeer = (role, code, arActive = false) => {
     const [peer, setPeer] = useState(null);
     const [call, setCall] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
@@ -13,12 +13,24 @@ export const usePeer = (role, code) => {
 
     const [facingMode, setFacingMode] = useState('environment');
 
-    const getVideoConstraints = (mode) => ({
-        facingMode: { ideal: mode },
-        width: { ideal: 1280, max: 1280 },
-        height: { ideal: 720, max: 720 },
-        frameRate: { ideal: 20, max: 30 }
-    });
+    const getVideoConstraints = (mode, isAR) => {
+        // Base constraints
+        const constraints = {
+            facingMode: { ideal: mode },
+            width: { ideal: 1280, max: 1280 },
+            height: { ideal: 720, max: 720 },
+            frameRate: { ideal: 20, max: 30 }
+        };
+
+        // Further optimize if AR is active to save resources
+        if (isAR) {
+            constraints.width = { ideal: 640 };
+            constraints.height = { ideal: 480 };
+            constraints.frameRate = { ideal: 12, max: 15 };
+        }
+
+        return constraints;
+    };
 
     useEffect(() => {
         if (!code) return;
@@ -51,7 +63,7 @@ export const usePeer = (role, code) => {
             console.log("Incoming call...", incomingCall);
             navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: getVideoConstraints(facingMode)
+                video: getVideoConstraints(facingMode, arActive)
             })
                 .then(stream => {
                     localStreamRef.current = stream;
@@ -120,7 +132,7 @@ export const usePeer = (role, code) => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: getVideoConstraints(facingMode)
+                video: getVideoConstraints(facingMode, arActive)
             });
             localStreamRef.current = stream;
             const outgoingCall = p.call(targetId, stream);
@@ -144,7 +156,7 @@ export const usePeer = (role, code) => {
             // Get new stream
             const newStream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: getVideoConstraints(nextMode)
+                video: getVideoConstraints(nextMode, arActive)
             });
             localStreamRef.current = newStream;
 
@@ -163,6 +175,43 @@ export const usePeer = (role, code) => {
         } catch (e) {
             console.error("Error switching camera:", e);
             setStatus("Camera switch error: " + e.message);
+        }
+    };
+
+    // Handle Dynamic AR Constraint Changes
+    useEffect(() => {
+        if (role === 'user' && call && call.peerConnection) {
+            console.log("AR State Changed - Refreshing Camera Constraints:", arActive);
+            refreshMediaTracks();
+        }
+    }, [arActive]);
+
+    const refreshMediaTracks = async () => {
+        try {
+            // Stop old tracks
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+
+            // Get new stream with current facingMode and arActive state
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: getVideoConstraints(facingMode, arActive)
+            });
+            localStreamRef.current = newStream;
+
+            // Replace tracks in active call
+            if (call && call.peerConnection) {
+                const videoTrack = newStream.getVideoTracks()[0];
+                const senders = call.peerConnection.getSenders();
+                const videoSender = senders.find(s => s.track?.kind === 'video');
+
+                if (videoSender) {
+                    videoSender.replaceTrack(videoTrack);
+                }
+            }
+        } catch (e) {
+            console.error("Error refreshing media tracks:", e);
         }
     };
 
