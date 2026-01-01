@@ -13,6 +13,13 @@ export const usePeer = (role, code) => {
 
     const [facingMode, setFacingMode] = useState('environment');
 
+    const getVideoConstraints = (mode) => ({
+        facingMode: { ideal: mode },
+        width: { ideal: 1280, max: 1280 },
+        height: { ideal: 720, max: 720 },
+        frameRate: { ideal: 20, max: 30 }
+    });
+
     useEffect(() => {
         if (!code) return;
 
@@ -44,7 +51,7 @@ export const usePeer = (role, code) => {
             console.log("Incoming call...", incomingCall);
             navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: { facingMode: { ideal: facingMode } }
+                video: getVideoConstraints(facingMode)
             })
                 .then(stream => {
                     localStreamRef.current = stream;
@@ -113,7 +120,7 @@ export const usePeer = (role, code) => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: { facingMode: { ideal: facingMode } }
+                video: getVideoConstraints(facingMode)
             });
             localStreamRef.current = stream;
             const outgoingCall = p.call(targetId, stream);
@@ -137,7 +144,7 @@ export const usePeer = (role, code) => {
             // Get new stream
             const newStream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: { facingMode: { ideal: nextMode } }
+                video: getVideoConstraints(nextMode)
             });
             localStreamRef.current = newStream;
 
