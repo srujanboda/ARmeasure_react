@@ -412,19 +412,25 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
             }} className="plan-canvas-container">
                 <style>{`
                 .plan-canvas-container::-webkit-scrollbar {
-                    width: 10px;
-                    height: 10px;
+                    width: 12px;
+                    height: 12px;
+                    display: block !important;
                 }
                 .plan-canvas-container::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                    border-radius: 5px;
+                    background: #242424;
+                    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+                    border-radius: 6px;
                 }
                 .plan-canvas-container::-webkit-scrollbar-thumb {
-                    background: #888;
-                    border-radius: 5px;
+                    background: linear-gradient(180deg, #007bff, #0056b3);
+                    border-radius: 6px;
+                    border: 2px solid #242424;
                 }
                 .plan-canvas-container::-webkit-scrollbar-thumb:hover {
-                    background: #555;
+                    background: linear-gradient(180deg, #008cff, #007bff);
+                }
+                .plan-canvas-container {
+                    overflow: scroll !important; /* Force scrollbars to be always visible */
                 }
             `}</style>
                 <canvas
