@@ -51,11 +51,21 @@ const ReviewerDashboard = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1:1.2', gridTemplateColumns: '1fr 1.2fr', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 20 }}>
                 {/* Video Column */}
-                <div style={{ background: '#222', borderRadius: 12, padding: 20, minHeight: 600 }}>
+                <div style={{ background: '#222', borderRadius: 12, padding: 20, minHeight: 400 }}>
                     <h3>User View</h3>
-                    <div style={{ width: '100%', height: 500, background: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, overflow: 'hidden' }}>
+                    <div style={{
+                        width: '100%',
+                        aspectRatio: '1 / 1',
+                        maxHeight: '70vh',
+                        background: 'black',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: 8,
+                        overflow: 'hidden'
+                    }}>
                         <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }}></video>
                     </div>
                 </div>
