@@ -10,6 +10,7 @@ export class MeasureManager {
         this.line = null;
         this.labels = [];
         this.allChains = [];
+        this.previewLine = null;
     }
 
     addPoint(position) {
@@ -113,6 +114,29 @@ export class MeasureManager {
         }
     }
 
+    updatePreview(reticlePos) {
+        // Remove existing preview
+        if (this.previewLine) {
+            this.scene.remove(this.previewLine);
+            this.previewLine = null;
+        }
+
+        // Only draw if there's at least one point and reticle is visible
+        if (this.points.length === 0 || !reticlePos) return;
+
+        const lastPoint = this.points[this.points.length - 1];
+        const geometry = new THREE.BufferGeometry().setFromPoints([lastPoint, reticlePos]);
+        const material = new THREE.LineBasicMaterial({
+            color: 0x007bff,
+            transparent: true,
+            opacity: 0.5,
+            linewidth: 2
+        });
+
+        this.previewLine = new THREE.Line(geometry, material);
+        this.scene.add(this.previewLine);
+    }
+
     createLabel(distMeters) {
         // We always store and calculate in meters in logic, but UI might want to show cached unit or we just pass meters
         // Ideally the label should react to unit changes, but for now we bake it based on a "currentUnit" passed in?
@@ -168,10 +192,14 @@ export class MeasureManager {
         return new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cnv), depthTest: false }));
     }
 
-    getTotalDistance() {
+    getTotalDistance(liveReticlePos) {
         let total = 0;
         for (let i = 1; i < this.points.length; i++) {
             total += this.points[i - 1].distanceTo(this.points[i]);
+        }
+        // Add distance to reticle for real-time preview
+        if (liveReticlePos && this.points.length > 0) {
+            total += this.points[this.points.length - 1].distanceTo(liveReticlePos);
         }
         return total;
     }

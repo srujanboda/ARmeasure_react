@@ -17,9 +17,18 @@ const ARScene = forwardRef((props, ref) => {
     const [stats, setStats] = useState({ total: "0.00 m", count: 0 });
 
     useImperativeHandle(ref, () => ({
-        undo: () => logicRef.current.measureManager?.undoLastPoint(),
-        reset: () => logicRef.current.measureManager?.resetAll(),
-        startNewLine: () => logicRef.current.measureManager?.startNewLine(),
+        undo: () => {
+            logicRef.current.measureManager?.undoLastPoint();
+            updateUI();
+        },
+        reset: () => {
+            logicRef.current.measureManager?.resetAll();
+            updateUI();
+        },
+        startNewLine: () => {
+            logicRef.current.measureManager?.startNewLine();
+            updateUI();
+        },
         setUnit: (u) => {
             logicRef.current.currentUnit = u;
             logicRef.current.measureManager?.setUnit(u);
@@ -95,21 +104,24 @@ const ARScene = forwardRef((props, ref) => {
 
     const render = (t, frame) => {
         const mgr = logicRef.current;
-        if (!mgr.interactionManager) return;
+        if (!mgr.interactionManager || !mgr.measureManager) return;
 
         const session = mgr.sceneManager.getSession();
         mgr.interactionManager.update(frame, session);
 
-        // UI Update Loop? prefer event driven but fallback to frame-based if needed
-        // Here we just let React handle UI state updates when "Tap" happens or "Undo" happens
-        // But formatting reticle status might be needed?
-        // Let's keep it simple.
+        // Real-time Visuals & UI
+        const pos = mgr.interactionManager.getReticlePosition();
+        mgr.measureManager.updatePreview(pos);
+
+        // Dynamic distance update in UI pill
+        if (pos && mgr.measureManager.getPointCount() > 0) {
+            updateUI(pos);
+        }
     };
 
-    const updateUI = () => {
+    const updateUI = (livePos) => {
         const mgr = logicRef.current;
-        const dist = mgr.measureManager.getTotalDistance();
-        // formatDistance needs to be imported or copied
+        const dist = mgr.measureManager.getTotalDistance(livePos);
         const text = formatDistance(dist, mgr.currentUnit);
         const count = mgr.measureManager.getPointCount();
         setStats({ total: text, count });
