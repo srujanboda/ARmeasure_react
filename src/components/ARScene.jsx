@@ -62,6 +62,11 @@ const ARScene = forwardRef((props, ref) => {
         );
         mgr.sceneManager.init(props.overlayRoot);
 
+        // Ensure background transparency for AR feed
+        if (mgr.sceneManager.renderer) {
+            mgr.sceneManager.renderer.setClearColor(0x000000, 0);
+        }
+
         // 2. Managers
         mgr.measureManager = new MeasureManager(mgr.sceneManager.scene);
         mgr.interactionManager = new InteractionManager(

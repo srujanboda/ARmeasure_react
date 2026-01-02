@@ -22,7 +22,7 @@ const UserARView = () => {
     };
 
     return (
-        <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
+        <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: 'transparent' }}>
             {/* AR Scene in background */}
             <ARScene
                 ref={arSceneRef}
@@ -31,73 +31,73 @@ const UserARView = () => {
             />
 
             {/* Overlay UI - Top Center Pill */}
-            <div style={{
+            <div className="glass-panel" style={{
                 position: 'absolute',
-                top: 30,
+                top: 25,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
                 borderRadius: 40,
-                padding: '12px 40px',
+                padding: '10px 35px',
                 textAlign: 'center',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                minWidth: 180,
-                pointerEvents: 'none'
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                minWidth: 160,
+                pointerEvents: 'none',
+                zIndex: 10
             }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', letterSpacing: '1px', marginBottom: 2 }}>TOTAL DISTANCE</div>
-                <div style={{ fontSize: 32, fontWeight: 700, color: '#3399ff' }}>
-                    {stats.total.split(' ')[0]} <span style={{ fontSize: 18, color: '#fff' }}>{stats.total.split(' ')[1]}</span>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: '1.5px', marginBottom: 2, textTransform: 'uppercase' }}>Total Distance</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#3399ff', display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
+                    {stats.total.split(' ')[0]} <span style={{ fontSize: 16, color: '#fff', opacity: 0.8 }}>{stats.total.split(' ')[1]}</span>
                 </div>
             </div>
 
-            {/* Status & Peer Info - Subtle Top Left */}
-            <div style={{ position: 'absolute', top: 20, left: 20, pointerEvents: 'none', opacity: 0.6 }}>
-                <div style={{ fontSize: 10, color: '#fff' }}>{arStatus}</div>
-                <div style={{ fontSize: 10, color: '#aaa' }}>{peerStatus}</div>
+            {/* Top Left Info */}
+            <div style={{ position: 'absolute', top: 20, left: 20, pointerEvents: 'none', zIndex: 10 }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>{arStatus}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{peerStatus}</div>
             </div>
 
-            {/* Right Side Circular Buttons */}
-            <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 15 }}>
+            {/* Top Right Controls */}
+            <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, display: 'flex', gap: 12 }}>
+                <button
+                    onClick={handleEndCall}
+                    className="glass-btn"
+                    style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        background: 'rgba(220,53,69,0.4)',
+                        border: '1px solid rgba(220,53,69,0.3)'
+                    }}
+                    title="End Call"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                        <line x1="12" y1="2" x2="12" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+
+            {/* Middle Right Stack */}
+            <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 16, zIndex: 10 }}>
                 <button
                     onClick={() => arSceneRef.current?.cycleUnit()}
-                    style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.15)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-                    }}
+                    className="glass-btn"
+                    style={{ width: 60, height: 60, borderRadius: '50%', fontSize: 13, fontWeight: 700 }}
                 >
                     UNIT
                 </button>
                 <button
                     onClick={() => setShowPlan(!showPlan)}
+                    className="glass-btn"
                     style={{
-                        width: 64,
-                        height: 64,
+                        width: 60,
+                        height: 60,
                         borderRadius: '50%',
-                        background: '#007bff',
-                        border: 'none',
-                        color: 'white',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 15px rgba(0,123,255,0.4)'
+                        background: showPlan ? '#007bff' : 'rgba(255,255,255,0.15)',
+                        borderColor: showPlan ? '#007bff' : 'rgba(255,255,255,0.2)'
                     }}
                 >
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                         <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -107,17 +107,8 @@ const UserARView = () => {
                 </button>
                 <button
                     onClick={toggleCamera}
-                    style={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.1)',
-                        border: 'none',
-                        color: 'white',
-                        marginTop: 10,
-                        opacity: 0.7,
-                        cursor: 'pointer'
-                    }}
+                    className="glass-btn"
+                    style={{ width: 44, height: 44, borderRadius: '50%', margin: '0 auto', opacity: 0.8 }}
                 >
                     {facingMode === 'user' ? '🔄' : '📷'}
                 </button>
@@ -125,102 +116,62 @@ const UserARView = () => {
 
             {/* Floating Plan View */}
             {showPlan && (
-                <div style={{
+                <div className="glass-panel" style={{
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '90%',
+                    width: '92%',
                     height: '80%',
-                    maxHeight: '80%',
-                    background: 'white',
-                    borderRadius: 20,
-                    padding: 20,
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                    borderRadius: 24,
+                    padding: 24,
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
                     zIndex: 1000,
                     overflow: 'auto',
-                    color: 'black'
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    background: 'rgba(255,255,255,0.95)'
                 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 15 }}>
-                        <h3 style={{ margin: 0 }}>Project Plan</h3>
-                        <button onClick={() => setShowPlan(false)} style={{ border: 'none', background: 'none', fontSize: 24, cursor: 'pointer', padding: 10 }}>✕</button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                        <h3 style={{ margin: 0, color: '#222', fontSize: 20 }}>Project Plan</h3>
+                        <button onClick={() => setShowPlan(false)} style={{ border: 'none', background: 'rgba(0,0,0,0.05)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>✕</button>
                     </div>
                     <PlanParser role="user" sendData={sendData} remoteData={remoteData} isDataConnected={isDataConnected} />
                 </div>
             )}
 
-            {/* Bottom Controls - Utilities */}
-            <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 15, pointerEvents: 'none' }}>
-                <button
-                    onClick={() => arSceneRef.current?.undo()}
-                    style={{
-                        padding: '12px 30px',
-                        borderRadius: 30,
-                        background: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        border: '1px solid #444',
-                        cursor: 'pointer',
-                        pointerEvents: 'auto',
-                        fontSize: 14,
-                        fontWeight: 600
-                    }}
-                >
-                    Undo
-                </button>
-                <button
-                    onClick={() => arSceneRef.current?.startNewLine()}
-                    style={{
-                        padding: '12px 30px',
-                        borderRadius: 30,
-                        background: '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        cursor: 'pointer',
-                        pointerEvents: 'auto',
-                        fontSize: 14,
-                        fontWeight: 600,
-                        boxShadow: '0 4px 15px rgba(0,123,255,0.3)'
-                    }}
-                >
-                    New Room
-                </button>
-                <button
-                    onClick={() => arSceneRef.current?.reset()}
-                    style={{
-                        padding: '12px 30px',
-                        borderRadius: 30,
-                        background: 'rgba(220,53,69,0.7)',
-                        color: 'white',
-                        border: '1px solid rgba(220,53,69,0.3)',
-                        cursor: 'pointer',
-                        pointerEvents: 'auto',
-                        fontSize: 14,
-                        fontWeight: 600
-                    }}
-                >
-                    Reset
-                </button>
-            </div>
+            {/* Conditional Bottom Controls */}
+            {stats.count > 0 && (
+                <div style={{ position: 'absolute', bottom: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 16, zIndex: 10, padding: '0 20px' }}>
+                    <button
+                        onClick={() => arSceneRef.current?.undo()}
+                        className="glass-btn"
+                        style={{ padding: '12px 24px', borderRadius: 30, fontSize: 14, minWidth: 100 }}
+                    >
+                        Undo
+                    </button>
+                    <button
+                        onClick={() => arSceneRef.current?.startNewLine()}
+                        className="glass-btn glass-btn-primary"
+                        style={{ padding: '12px 24px', borderRadius: 30, fontSize: 15, minWidth: 130, fontWeight: 700 }}
+                    >
+                        New Room
+                    </button>
+                    <button
+                        onClick={() => arSceneRef.current?.reset()}
+                        className="glass-btn glass-btn-danger"
+                        style={{ padding: '12px 24px', borderRadius: 30, fontSize: 14, minWidth: 100 }}
+                    >
+                        Reset
+                    </button>
+                </div>
+            )}
 
-            {/* Exit/End Call - Subtle Bottom Left */}
-            <button
-                onClick={handleEndCall}
-                style={{
-                    position: 'absolute',
-                    bottom: 20,
-                    left: 20,
-                    background: 'rgba(255,255,255,0.1)',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 12px',
-                    color: 'white',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    opacity: 0.5
-                }}
-            >
-                End Call
-            </button>
+            {/* Point Counter - Subtle Bottom right */}
+            {stats.count > 0 && (
+                <div style={{ position: 'absolute', bottom: 20, right: 20, color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 500 }}>
+                    {stats.count} points measured
+                </div>
+            )}
         </div>
     );
 };
