@@ -64,9 +64,24 @@ const ReviewerDashboard = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, width: '100%' }}>
-                {/* Video Column */}
-                <div style={{ background: '#222', borderRadius: 12, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minHeight: '75vh' }}>
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: 24, 
+                width: '100%',
+                boxSizing: 'border-box'
+            }}>
+                {/* Video Column - Equal width with Plan Parser */}
+                <div style={{ 
+                    background: '#222', 
+                    borderRadius: 12, 
+                    padding: 24, 
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)', 
+                    minHeight: '75vh',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden'
+                }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
                         <h3 style={{ margin: 0, color: '#fff' }}>User View</h3>
                         {remoteStream && (
@@ -164,10 +179,23 @@ const ReviewerDashboard = () => {
                     </div>
                 </div>
 
-                {/* Plan Column */}
-                <div style={{ background: '#222', borderRadius: 12, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minHeight: '75vh' }}>
+                {/* Plan Column - Equal width with User View */}
+                <div style={{ 
+                    background: '#222', 
+                    borderRadius: 12, 
+                    padding: 24, 
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)', 
+                    minHeight: '75vh',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
                     <h3 style={{ marginBottom: 15, color: '#fff' }}>Floor Plan Verification</h3>
-                    <PlanParser role="reviewer" sendData={sendData} remoteData={remoteData} isDataConnected={isDataConnected} />
+                    <div style={{ flex: 1, width: '100%', overflow: 'auto', minWidth: 0 }}>
+                        <PlanParser role="reviewer" sendData={sendData} remoteData={remoteData} isDataConnected={isDataConnected} />
+                    </div>
                 </div>
             </div>
         </div>
