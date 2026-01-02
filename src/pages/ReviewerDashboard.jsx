@@ -51,14 +51,13 @@ const ReviewerDashboard = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, width: '100%' }}>
                 {/* Video Column */}
-                <div style={{ background: '#222', borderRadius: 12, padding: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
+                <div style={{ background: '#222', borderRadius: 12, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minHeight: '75vh' }}>
                     <h3 style={{ marginBottom: 15 }}>User View</h3>
                     <div style={{
                         width: '100%',
-                        aspectRatio: '9 / 16',
-                        maxHeight: 'calc(100vh - 180px)',
+                        height: '70vh',
                         background: '#000',
                         display: 'flex',
                         alignItems: 'center',
@@ -73,7 +72,7 @@ const ReviewerDashboard = () => {
                 </div>
 
                 {/* Plan Column */}
-                <div style={{ background: '#222', borderRadius: 12, padding: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
+                <div style={{ background: '#222', borderRadius: 12, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minHeight: '75vh' }}>
                     <h3 style={{ marginBottom: 15 }}>Floor Plan Verification</h3>
                     <PlanParser role="reviewer" sendData={sendData} remoteData={remoteData} isDataConnected={isDataConnected} />
                 </div>
