@@ -11,9 +11,22 @@ const ReviewerDashboard = () => {
     const videoRef = useRef(null);
 
     useEffect(() => {
-        if (videoRef.current && remoteStream) {
-            videoRef.current.srcObject = remoteStream;
+        const video = videoRef.current;
+        if (video && remoteStream) {
+            video.srcObject = remoteStream;
+            video.play().catch(err => {
+                console.error("Error playing video:", err);
+            });
+        } else if (video && !remoteStream) {
+            // Clear video when stream is lost
+            video.srcObject = null;
         }
+
+        return () => {
+            if (video) {
+                video.srcObject = null;
+            }
+        };
     }, [remoteStream]);
 
     const handleEndCall = () => {
@@ -54,7 +67,29 @@ const ReviewerDashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, width: '100%' }}>
                 {/* Video Column */}
                 <div style={{ background: '#222', borderRadius: 12, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minHeight: '75vh' }}>
-                    <h3 style={{ marginBottom: 15 }}>User View</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                        <h3 style={{ margin: 0, color: '#fff' }}>User View</h3>
+                        {remoteStream && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '6px 12px',
+                                background: 'rgba(40, 167, 69, 0.2)',
+                                borderRadius: 20,
+                                border: '1px solid rgba(40, 167, 69, 0.5)'
+                            }}>
+                                <div style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    background: '#28a745',
+                                    animation: 'pulse 2s infinite'
+                                }}></div>
+                                <span style={{ fontSize: 12, color: '#28a745', fontWeight: 'bold' }}>LIVE</span>
+                            </div>
+                        )}
+                    </div>
                     <div style={{
                         width: '100%',
                         height: '70vh',
@@ -65,15 +100,73 @@ const ReviewerDashboard = () => {
                         borderRadius: 12,
                         overflow: 'hidden',
                         boxShadow: '0 0 20px rgba(0,123,255,0.1)',
-                        margin: '0 auto'
+                        margin: '0 auto',
+                        position: 'relative'
                     }}>
-                        <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }}></video>
+                        {remoteStream ? (
+                            <video 
+                                ref={videoRef} 
+                                autoPlay 
+                                playsInline 
+                                style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'contain',
+                                    display: 'block'
+                                }}
+                            />
+                        ) : (
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#888',
+                                textAlign: 'center',
+                                padding: 40
+                            }}>
+                                <div style={{
+                                    width: 80,
+                                    height: 80,
+                                    border: '3px solid #444',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: 20,
+                                    animation: 'pulse 2s infinite'
+                                }}>
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#666' }}>
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                        <circle cx="12" cy="13" r="4"></circle>
+                                    </svg>
+                                </div>
+                                <div style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#aaa' }}>
+                                    Waiting for User Stream
+                                </div>
+                                <div style={{ fontSize: 14, color: '#666' }}>
+                                    {status.includes('Waiting') || status.includes('not online') ? (
+                                        'User is connecting...'
+                                    ) : status.includes('Connected') ? (
+                                        'Stream starting...'
+                                    ) : (
+                                        status
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        <style>{`
+                            @keyframes pulse {
+                                0%, 100% { opacity: 0.5; }
+                                50% { opacity: 1; }
+                            }
+                        `}</style>
                     </div>
                 </div>
 
                 {/* Plan Column */}
                 <div style={{ background: '#222', borderRadius: 12, padding: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minHeight: '75vh' }}>
-                    <h3 style={{ marginBottom: 15 }}>Floor Plan Verification</h3>
+                    <h3 style={{ marginBottom: 15, color: '#fff' }}>Floor Plan Verification</h3>
                     <PlanParser role="reviewer" sendData={sendData} remoteData={remoteData} isDataConnected={isDataConnected} />
                 </div>
             </div>
