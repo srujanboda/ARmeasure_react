@@ -14,12 +14,24 @@ export class InteractionManager {
     }
 
     initReticle() {
-        // Simple, highly visible legacy-style reticle
+        // Professional blue ring with white precision dot
+        const group = new THREE.Group();
+
+        // Blue outer ring
         const ringGeom = new THREE.RingGeometry(0.08, 0.10, 32);
         ringGeom.rotateX(-Math.PI / 2);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.9 });
-        this.reticle = new THREE.Mesh(ringGeom, ringMat);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x007bff, transparent: true, opacity: 0.7 });
+        const ring = new THREE.Mesh(ringGeom, ringMat);
+        group.add(ring);
 
+        // White precision center dot
+        const dotGeom = new THREE.CircleGeometry(0.006, 16);
+        dotGeom.rotateX(-Math.PI / 2);
+        const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const dot = new THREE.Mesh(dotGeom, dotMat);
+        group.add(dot);
+
+        this.reticle = group;
         this.reticle.matrixAutoUpdate = false;
         this.reticle.visible = false;
         this.scene.add(this.reticle);
