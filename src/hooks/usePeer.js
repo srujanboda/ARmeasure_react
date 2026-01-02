@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Peer from 'peerjs';
 
 export const usePeer = (role, code, arActive = false) => {
@@ -10,34 +10,108 @@ export const usePeer = (role, code, arActive = false) => {
     const [data, setData] = useState(null);
     const [isDataConnected, setIsDataConnected] = useState(false);
     const localStreamRef = useRef(null);
-
     const [facingMode, setFacingMode] = useState('environment');
 
-    const getVideoConstraints = (mode, isAR) => {
-        // Base constraints
+    function getVideoConstraints(mode, isAR) {
         const constraints = {
             facingMode: { ideal: mode },
             width: { ideal: 1280, max: 1280 },
             height: { ideal: 720, max: 720 },
             frameRate: { ideal: 20, max: 30 }
         };
-
-        // Further optimize if AR is active to save resources
         if (isAR) {
             constraints.width = { ideal: 640 };
             constraints.height = { ideal: 480 };
             constraints.frameRate = { ideal: 12, max: 15 };
         }
-
         return constraints;
-    };
+    }
+
+    const setupCallEvents = useCallback((activeCall) => {
+        setCall(activeCall);
+        activeCall.on('stream', (stream) => {
+            console.log("Remote Stream received");
+            setRemoteStream(stream);
+            if (role === 'reviewer') {
+                setStatus(`Connected - Receiving stream from ${activeCall.peer}`);
+            } else {
+                setStatus(`Connected - Streaming to ${activeCall.peer}`);
+            }
+        });
+        activeCall.on('close', () => {
+            setStatus("Call Ended");
+            setCall(null);
+            setRemoteStream(null);
+        });
+        activeCall.on('error', (err) => {
+            console.error("Call error:", err);
+            setStatus(`Call Error: ${err.message || err.type}`);
+        });
+    }, [role]);
+
+    const setupDataEvents = useCallback((dataConn) => {
+        setConn(dataConn);
+        dataConn.on('data', (receivedData) => {
+            console.log("Data received:", receivedData?.type);
+            setData(receivedData);
+        });
+        dataConn.on('open', () => {
+            console.log("Data connection open with:", dataConn.peer);
+            setIsDataConnected(true);
+        });
+        dataConn.on('close', () => {
+            setConn(null);
+            setIsDataConnected(false);
+        });
+        dataConn.on('error', (err) => {
+            console.error("Data connection error:", err);
+            setIsDataConnected(false);
+        });
+    }, []);
+
+    const startCall = useCallback(async (p, targetId) => {
+        setStatus(`Calling ${targetId}...`);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: getVideoConstraints(facingMode, arActive)
+            });
+            localStreamRef.current = stream;
+            const outgoingCall = p.call(targetId, stream);
+            setupCallEvents(outgoingCall);
+        } catch (e) {
+            console.error("Media Error:", e);
+            setStatus("Media Error: " + e.message);
+        }
+    }, [facingMode, arActive, setupCallEvents]);
+
+    const refreshMediaTracks = useCallback(async () => {
+        try {
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: getVideoConstraints(facingMode, arActive)
+            });
+            localStreamRef.current = newStream;
+            if (call && call.peerConnection) {
+                const videoTrack = newStream.getVideoTracks()[0];
+                const senders = call.peerConnection.getSenders();
+                const videoSender = senders.find(s => s.track?.kind === 'video');
+                if (videoSender) {
+                    videoSender.replaceTrack(videoTrack);
+                }
+            }
+        } catch (e) {
+            console.error("Error refreshing media tracks:", e);
+        }
+    }, [facingMode, arActive, call]);
 
     useEffect(() => {
         if (!code) return;
-
         const myId = role === 'reviewer' ? `${code}-reviewer` : `${code}-user`;
         const targetId = role === 'reviewer' ? `${code}-user` : `${code}-reviewer`;
-
         setStatus("Connecting to Server...");
         const p = new Peer(myId);
 
@@ -45,17 +119,15 @@ export const usePeer = (role, code, arActive = false) => {
             console.log("Peer opened with ID:", id);
             setStatus(role === 'reviewer' ? "Waiting for someone to join..." : "Ready to call...");
             setPeer(p);
-
             if (role === 'user') {
                 startCall(p, targetId);
-                // Initiate data connection
                 const dataConn = p.connect(targetId);
                 setupDataEvents(dataConn);
             }
         });
 
         p.on('connection', (dataConn) => {
-            console.log("Incoming data connection from:", dataConn.peer);
+            console.log("Incoming data connection-from:", dataConn.peer);
             setupDataEvents(dataConn);
         });
 
@@ -82,10 +154,6 @@ export const usePeer = (role, code, arActive = false) => {
             p.reconnect();
         });
 
-        p.on('close', () => {
-            setStatus("Connection closed.");
-        });
-
         p.on('error', (err) => {
             console.error("Peer Error:", err);
             setStatus(`Error: ${err.type}`);
@@ -97,144 +165,45 @@ export const usePeer = (role, code, arActive = false) => {
         return () => {
             p.destroy();
         };
-    }, [role, code]);
+    }, [role, code, startCall, setupCallEvents, setupDataEvents, facingMode, arActive]);
 
-    const setupDataEvents = (dataConn) => {
-        setConn(dataConn);
-        dataConn.on('data', (receivedData) => {
-            console.log("Data received:", receivedData?.type);
-            setData(receivedData);
-        });
-        dataConn.on('open', () => {
-            console.log("Data connection open with:", dataConn.peer);
-            setIsDataConnected(true);
-        });
-        dataConn.on('close', () => {
-            setConn(null);
-            setIsDataConnected(false);
-        });
-        dataConn.on('error', (err) => {
-            console.error("Data connection error:", err);
-            setIsDataConnected(false);
-        });
-    };
+    useEffect(() => {
+        if (role === 'user' && call && call.peerConnection) {
+            refreshMediaTracks();
+        }
+    }, [arActive, role, call, refreshMediaTracks]);
 
     const sendData = (payload) => {
         if (conn && conn.open) {
             conn.send(payload);
-        } else {
-            console.warn("Cannot send data: connection not open");
-        }
-    };
-
-    const startCall = async (p, targetId) => {
-        setStatus(`Calling ${targetId}...`);
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: getVideoConstraints(facingMode, arActive)
-            });
-            localStreamRef.current = stream;
-            const outgoingCall = p.call(targetId, stream);
-            setupCallEvents(outgoingCall);
-        } catch (e) {
-            console.error("Media Error:", e);
-            setStatus("Media Error: " + e.message);
         }
     };
 
     const toggleCamera = async () => {
         const nextMode = facingMode === 'user' ? 'environment' : 'user';
         setFacingMode(nextMode);
-
         try {
-            // Stop old tracks
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => track.stop());
             }
-
-            // Get new stream
             const newStream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
                 video: getVideoConstraints(nextMode, arActive)
             });
             localStreamRef.current = newStream;
-
-            // If we have an active call, replace the tracks
             if (call && call.peerConnection) {
                 const videoTrack = newStream.getVideoTracks()[0];
                 const senders = call.peerConnection.getSenders();
                 const videoSender = senders.find(s => s.track?.kind === 'video');
-
                 if (videoSender) {
                     videoSender.replaceTrack(videoTrack);
                 }
             }
-
             setStatus(`Switched to ${nextMode} camera`);
         } catch (e) {
             console.error("Error switching camera:", e);
             setStatus("Camera switch error: " + e.message);
         }
-    };
-
-    // Handle Dynamic AR Constraint Changes
-    useEffect(() => {
-        if (role === 'user' && call && call.peerConnection) {
-            console.log("AR State Changed - Refreshing Camera Constraints:", arActive);
-            refreshMediaTracks();
-        }
-    }, [arActive]);
-
-    const refreshMediaTracks = async () => {
-        try {
-            // Stop old tracks
-            if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach(track => track.stop());
-            }
-
-            // Get new stream with current facingMode and arActive state
-            const newStream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: getVideoConstraints(facingMode, arActive)
-            });
-            localStreamRef.current = newStream;
-
-            // Replace tracks in active call
-            if (call && call.peerConnection) {
-                const videoTrack = newStream.getVideoTracks()[0];
-                const senders = call.peerConnection.getSenders();
-                const videoSender = senders.find(s => s.track?.kind === 'video');
-
-                if (videoSender) {
-                    videoSender.replaceTrack(videoTrack);
-                }
-            }
-        } catch (e) {
-            console.error("Error refreshing media tracks:", e);
-        }
-    };
-
-    const setupCallEvents = (activeCall) => {
-        setCall(activeCall);
-        activeCall.on('stream', (stream) => {
-            console.log("Remote Stream received");
-            setRemoteStream(stream);
-            if (role === 'reviewer') {
-                setStatus(`Connected - Receiving stream from ${activeCall.peer}`);
-            } else {
-                setStatus(`Connected - Streaming to ${activeCall.peer}`);
-            }
-        });
-        activeCall.on('close', () => {
-            setStatus("Call Ended");
-            setCall(null);
-            setRemoteStream(null);
-        });
-        activeCall.on('error', (err) => {
-            console.error("Call error:", err);
-            setStatus(`Call Error: ${err.message || err.type}`);
-        });
     };
 
     const endCall = () => {

@@ -1,5 +1,22 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
+const drawShape = (ctx, points, fillColor, strokeColor) => {
+    if (points.length < 1) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+    }
+    if (points.length > 2) {
+        ctx.closePath();
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+    }
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+};
+
 const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected = false }) => {
     const canvasRef = useRef(null);
     const [image, setImage] = useState(null);
@@ -11,6 +28,44 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
     const syncTimeoutRef = useRef(null);
     const pendingImageRef = useRef(null);
     const retryTimeoutRef = useRef(null);
+
+
+    const draw = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        if (image) {
+            if (canvas.width !== image.width || canvas.height !== image.height) {
+                canvas.width = image.width;
+                canvas.height = image.height;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0);
+        } else {
+            canvas.width = 800;
+            canvas.height = 600;
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, 800, 600);
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'center';
+            ctx.font = '20px Arial';
+            ctx.fillText("Upload Floor Plan", 400, 300);
+            return;
+        }
+
+        savedRooms.forEach(room => drawShape(ctx, room.points, room.color, "#28a745"));
+
+        if (currentPoints.length > 0) {
+            drawShape(ctx, currentPoints, "rgba(0, 123, 255, 0.5)", "#007bff");
+            currentPoints.forEach(p => {
+                ctx.fillStyle = "#007bff";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+    }, [image, savedRooms, currentPoints]);
 
     // Load persisted data from localStorage on mount
     useEffect(() => {
@@ -103,7 +158,7 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
 
     useEffect(() => {
         draw();
-    }, [image, savedRooms, currentPoints]);
+    }, [draw]);
 
     // Retry sending image when connection becomes ready
     useEffect(() => {
@@ -290,59 +345,6 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         };
     }, []);
 
-    const draw = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        if (image) {
-            if (canvas.width !== image.width || canvas.height !== image.height) {
-                canvas.width = image.width;
-                canvas.height = image.height;
-            }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(image, 0, 0);
-        } else {
-            canvas.width = 800;
-            canvas.height = 600;
-            ctx.fillStyle = '#f0f0f0';
-            ctx.fillRect(0, 0, 800, 600);
-            ctx.fillStyle = '#666';
-            ctx.textAlign = 'center';
-            ctx.font = '20px Arial';
-            ctx.fillText("Upload Floor Plan", 400, 300);
-            return;
-        }
-
-        savedRooms.forEach(room => drawShape(ctx, room.points, room.color, "#28a745"));
-
-        if (currentPoints.length > 0) {
-            drawShape(ctx, currentPoints, "rgba(0, 123, 255, 0.5)", "#007bff");
-            currentPoints.forEach(p => {
-                ctx.fillStyle = "#007bff";
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-                ctx.fill();
-            });
-        }
-    };
-
-    const drawShape = (ctx, points, fillColor, strokeColor) => {
-        if (points.length < 1) return;
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-        }
-        if (points.length > 2) {
-            ctx.closePath();
-            ctx.fillStyle = fillColor;
-            ctx.fill();
-        }
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
@@ -404,7 +406,7 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                 borderRadius: 8,
                 overflow: 'auto',
                 width: '100%',
-                maxHeight: '70vh',
+                maxHeight: '80vh',
                 position: 'relative',
                 background: '#eee'
             }} className="plan-canvas-container">

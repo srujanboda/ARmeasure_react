@@ -18,7 +18,6 @@ const ReviewerDashboard = () => {
                 console.error("Error playing video:", err);
             });
         } else if (video && !remoteStream) {
-            // Clear video when stream is lost
             video.srcObject = null;
         }
 
@@ -35,7 +34,7 @@ const ReviewerDashboard = () => {
     };
 
     return (
-        <div style={{ padding: '20px 2%', maxWidth: '100%', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ padding: '10px 1%', maxWidth: '100%', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h1>Reviewer Dashboard</h1>
                 <div style={{ display: 'flex', gap: 15, alignItems: 'center' }}>
@@ -64,20 +63,20 @@ const ReviewerDashboard = () => {
                 </div>
             </div>
 
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gap: 24, 
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 12,
                 width: '100%',
                 boxSizing: 'border-box'
             }}>
                 {/* Video Column - Equal width with Plan Parser */}
-                <div style={{ 
-                    background: '#222', 
-                    borderRadius: 12, 
-                    padding: 24, 
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)', 
-                    minHeight: '75vh',
+                <div style={{
+                    background: '#222',
+                    borderRadius: 12,
+                    padding: 24,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                    minHeight: '85vh',
                     width: '100%',
                     boxSizing: 'border-box',
                     overflow: 'hidden'
@@ -98,8 +97,7 @@ const ReviewerDashboard = () => {
                                     width: 8,
                                     height: 8,
                                     borderRadius: '50%',
-                                    background: '#28a745',
-                                    animation: 'pulse 2s infinite'
+                                    background: '#28a745'
                                 }}></div>
                                 <span style={{ fontSize: 12, color: '#28a745', fontWeight: 'bold' }}>LIVE</span>
                             </div>
@@ -107,7 +105,7 @@ const ReviewerDashboard = () => {
                     </div>
                     <div style={{
                         width: '100%',
-                        height: '70vh',
+                        height: '80vh',
                         background: '#000',
                         display: 'flex',
                         alignItems: 'center',
@@ -119,13 +117,13 @@ const ReviewerDashboard = () => {
                         position: 'relative'
                     }}>
                         {remoteStream ? (
-                            <video 
-                                ref={videoRef} 
-                                autoPlay 
-                                playsInline 
-                                style={{ 
-                                    width: '100%', 
-                                    height: '100%', 
+                            <video
+                                ref={videoRef}
+                                autoPlay
+                                playsInline
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
                                     objectFit: 'contain',
                                     display: 'block'
                                 }}
@@ -148,8 +146,7 @@ const ReviewerDashboard = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    marginBottom: 20,
-                                    animation: 'pulse 2s infinite'
+                                    marginBottom: 20
                                 }}>
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#666' }}>
                                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -170,22 +167,16 @@ const ReviewerDashboard = () => {
                                 </div>
                             </div>
                         )}
-                        <style>{`
-                            @keyframes pulse {
-                                0%, 100% { opacity: 0.5; }
-                                50% { opacity: 1; }
-                            }
-                        `}</style>
                     </div>
                 </div>
 
                 {/* Plan Column - Equal width with User View */}
-                <div style={{ 
-                    background: '#222', 
-                    borderRadius: 12, 
-                    padding: 24, 
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)', 
-                    minHeight: '75vh',
+                <div style={{
+                    background: '#222',
+                    borderRadius: 12,
+                    padding: 24,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                    minHeight: '85vh',
                     width: '100%',
                     boxSizing: 'border-box',
                     overflow: 'hidden',
