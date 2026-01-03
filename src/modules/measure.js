@@ -26,8 +26,8 @@ export class MeasureManager {
 
         const p = position.clone();
         const dot = new THREE.Mesh(
-            new THREE.SphereGeometry(0.016),
-            new THREE.MeshBasicMaterial({ color: 0x00ffaa })
+            new THREE.SphereGeometry(0.012),
+            new THREE.MeshBasicMaterial({ color: 0x007bff }) // Blue matching reticle
         );
         dot.position.copy(p);
         this.scene.add(dot);
@@ -39,11 +39,26 @@ export class MeasureManager {
     }
 
     undoLastPoint() {
-        if (this.points.length === 0) return;
-        const mesh = this.pointMeshes.pop();
-        this.scene.remove(mesh);
-        this.points.pop();
-        this.updateLine();
+        // 1. If current line has points, remove the latest
+        if (this.points.length > 0) {
+            const mesh = this.pointMeshes.pop();
+            this.scene.remove(mesh);
+            this.points.pop();
+            this.updateLine();
+            return;
+        }
+
+        // 2. If current line is empty, try to "re-open" the last saved chain
+        if (this.allChains.length > 0) {
+            const lastChain = this.allChains.pop();
+            this.points = lastChain.points;
+            this.pointMeshes = lastChain.meshes;
+            this.line = lastChain.line;
+            this.labels = lastChain.labels;
+
+            // Now that we've restored it, undo the last point of this restored line
+            this.undoLastPoint();
+        }
     }
 
     resetAll() {
@@ -194,10 +209,19 @@ export class MeasureManager {
 
     getTotalDistance(liveReticlePos) {
         let total = 0;
+        // 1. Sum distances from all archived chains
+        this.allChains.forEach(chain => {
+            for (let i = 1; i < chain.points.length; i++) {
+                total += chain.points[i - 1].distanceTo(chain.points[i]);
+            }
+        });
+
+        // 2. Sum distances from current active line
         for (let i = 1; i < this.points.length; i++) {
             total += this.points[i - 1].distanceTo(this.points[i]);
         }
-        // Add distance to reticle for real-time preview
+
+        // 3. Add live preview distance
         if (liveReticlePos && this.points.length > 0) {
             total += this.points[this.points.length - 1].distanceTo(liveReticlePos);
         }
@@ -205,7 +229,11 @@ export class MeasureManager {
     }
 
     getPointCount() {
-        return this.points.length;
+        let total = this.points.length;
+        this.allChains.forEach(chain => {
+            total += chain.points.length;
+        });
+        return total;
     }
 
     hasContent() {
