@@ -31,24 +31,23 @@ const UserARView = () => {
             />
 
             {/* Overlay UI - Top Center Pill */}
-            <div className="glass-panel" style={{
+            <div className="shiny-pill" style={{
                 position: 'absolute',
-                top: 20,
+                top: 25,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                borderRadius: 30,
-                padding: '8px 25px',
+                padding: '10px 30px',
                 textAlign: 'center',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                minWidth: 140,
+                minWidth: 160,
                 pointerEvents: 'none',
                 zIndex: 10
             }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: '1.2px', marginBottom: 0, textTransform: 'uppercase' }}>Total Distance</div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.45)', letterSpacing: '2px', marginBottom: 2, textTransform: 'uppercase' }}>Session Distance</div>
                 <div style={{
-                    fontSize: 26, fontWeight: 700, color: '#3399ff', display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 3
+                    fontSize: 28, fontWeight: 700, color: '#4da6ff', display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4,
+                    textShadow: '0 0 20px rgba(0,123,255,0.3)'
                 }}>
-                    {stats.total.split(' ')[0]} < span style={{ fontSize: 14, color: '#fff', opacity: 0.8 }}>{stats.total.split(' ')[1]}</span>
+                    {stats.total.split(' ')[0]} <span style={{ fontSize: 15, color: '#fff', opacity: 0.6, fontWeight: 500 }}>{stats.total.split(' ')[1]}</span>
                 </div>
             </div >
 
@@ -141,25 +140,25 @@ const UserARView = () => {
 
             {/* Conditional Bottom Controls - Repositioned above STOP AR */}
             {stats.count > 0 && (
-                <div style={{ position: 'absolute', bottom: 135, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 12, zIndex: 10, padding: '0 20px' }}>
+                <div style={{ position: 'absolute', bottom: 105, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 15, zIndex: 10, padding: '0 20px' }}>
                     <button
                         onClick={() => arSceneRef.current?.undo()}
                         className="glass-btn"
-                        style={{ padding: '10px 20px', borderRadius: 25, fontSize: 13, minWidth: 85 }}
+                        style={{ padding: '12px 24px', borderRadius: 30, fontSize: 14, minWidth: 95 }}
                     >
                         Undo
                     </button>
                     <button
                         onClick={() => arSceneRef.current?.startNewLine()}
                         className="glass-btn glass-btn-primary"
-                        style={{ padding: '10px 20px', borderRadius: 25, fontSize: 14, minWidth: 110, fontWeight: 700 }}
+                        style={{ padding: '12px 28px', borderRadius: 30, fontSize: 15, minWidth: 125, fontWeight: 800, letterSpacing: '0.5px' }}
                     >
                         New Line
                     </button>
                     <button
                         onClick={() => arSceneRef.current?.reset()}
                         className="glass-btn glass-btn-danger"
-                        style={{ padding: '10px 20px', borderRadius: 25, fontSize: 13, minWidth: 85 }}
+                        style={{ padding: '12px 24px', borderRadius: 30, fontSize: 14, minWidth: 95 }}
                     >
                         Reset
                     </button>

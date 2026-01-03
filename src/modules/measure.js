@@ -27,7 +27,7 @@ export class MeasureManager {
         const p = position.clone();
         const dot = new THREE.Mesh(
             new THREE.SphereGeometry(0.012),
-            new THREE.MeshBasicMaterial({ color: 0x007bff }) // Blue matching reticle
+            new THREE.MeshBasicMaterial({ color: 0x007bff }) // Professional blue matching reticle
         );
         dot.position.copy(p);
         this.scene.add(dot);
@@ -39,26 +39,11 @@ export class MeasureManager {
     }
 
     undoLastPoint() {
-        // 1. If current line has points, remove the latest
-        if (this.points.length > 0) {
-            const mesh = this.pointMeshes.pop();
-            this.scene.remove(mesh);
-            this.points.pop();
-            this.updateLine();
-            return;
-        }
-
-        // 2. If current line is empty, try to "re-open" the last saved chain
-        if (this.allChains.length > 0) {
-            const lastChain = this.allChains.pop();
-            this.points = lastChain.points;
-            this.pointMeshes = lastChain.meshes;
-            this.line = lastChain.line;
-            this.labels = lastChain.labels;
-
-            // Now that we've restored it, undo the last point of this restored line
-            this.undoLastPoint();
-        }
+        if (this.points.length === 0) return;
+        const mesh = this.pointMeshes.pop();
+        this.scene.remove(mesh);
+        this.points.pop();
+        this.updateLine();
     }
 
     resetAll() {
@@ -78,6 +63,11 @@ export class MeasureManager {
         if (this.line) {
             this.scene.remove(this.line);
             this.line = null;
+        }
+
+        if (this.previewLine) {
+            this.scene.remove(this.previewLine);
+            this.previewLine = null;
         }
 
         this.labels.forEach(l => this.scene.remove(l));
@@ -153,21 +143,9 @@ export class MeasureManager {
     }
 
     createLabel(distMeters) {
-        // We always store and calculate in meters in logic, but UI might want to show cached unit or we just pass meters
-        // Ideally the label should react to unit changes, but for now we bake it based on a "currentUnit" passed in?
-        // Or simpler: We create a label that *always* updates? Three.js sprites don't update automatically.
-        // Let's stick to the app.js logic: it redraws everything on update.
-        // So we need access to the "current unit". We can pass it to updateLine or store it.
-        // Let's assume meter for now and fix unit logic in main controller or pass it in.
-        // Refactor: make getDistanceText(m) a callback or passed var.
-
-        // For now, let's just make the texture. We will need the current unit.
-        // I'll make format function a dependency.
         return this.createLabelSprite(distMeters);
     }
 
-    // Dependencies need to be injected or passed.
-    // I'll add `currentUnit` setter.
     setUnit(unit) {
         this.currentUnit = unit;
 
@@ -209,19 +187,10 @@ export class MeasureManager {
 
     getTotalDistance(liveReticlePos) {
         let total = 0;
-        // 1. Sum distances from all archived chains
-        this.allChains.forEach(chain => {
-            for (let i = 1; i < chain.points.length; i++) {
-                total += chain.points[i - 1].distanceTo(chain.points[i]);
-            }
-        });
-
-        // 2. Sum distances from current active line
         for (let i = 1; i < this.points.length; i++) {
             total += this.points[i - 1].distanceTo(this.points[i]);
         }
-
-        // 3. Add live preview distance
+        // Add distance to reticle for real-time preview
         if (liveReticlePos && this.points.length > 0) {
             total += this.points[this.points.length - 1].distanceTo(liveReticlePos);
         }
@@ -229,11 +198,7 @@ export class MeasureManager {
     }
 
     getPointCount() {
-        let total = this.points.length;
-        this.allChains.forEach(chain => {
-            total += chain.points.length;
-        });
-        return total;
+        return this.points.length;
     }
 
     hasContent() {

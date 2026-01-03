@@ -55,54 +55,79 @@ body {
 
 /* Glassmorphism Utilities */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 .glass-btn {
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: white;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Outfit', sans-serif;
-  font-weight: 500;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
 }
 
 .glass-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.94);
   background: rgba(255, 255, 255, 0.25);
 }
 
 .glass-btn-primary {
-  background: rgba(0, 123, 255, 0.4);
-  border: 1px solid rgba(0, 123, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 123, 255, 0.3);
+  background: linear-gradient(135deg, rgba(0, 123, 255, 0.5), rgba(0, 86, 179, 0.5));
+  border: 1px solid rgba(0, 123, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 123, 255, 0.25);
+}
+
+.glass-btn-primary:hover {
+  background: linear-gradient(135deg, rgba(0, 123, 255, 0.65), rgba(0, 86, 179, 0.65));
+  box-shadow: 0 12px 30px rgba(0, 123, 255, 0.4);
 }
 
 .glass-btn-danger {
-  background: rgba(220, 53, 69, 0.4);
-  border: 1px solid rgba(220, 53, 69, 0.3);
-  box-shadow: 0 8px 32px rgba(220, 53, 69, 0.3);
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.5), rgba(167, 29, 42, 0.5));
+  border: 1px solid rgba(220, 53, 69, 0.4);
+}
+
+.glass-btn-danger:hover {
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.65), rgba(167, 29, 42, 0.65));
+}
+
+/* Shiny Pill for Stats */
+.shiny-pill {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
 .info-badge {
-  animation: fadeIn 0.5s ease-out;
+  animation: fadeIn 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-15px);
   }
 
   to {
@@ -114,34 +139,36 @@ body {
 /* Style the Three.js ARButton (START AR/STOP AR button) */
 .custom-ar-button {
   position: fixed !important;
-  bottom: 80px !important;
+  bottom: 40px !important;
+  /* Moved down from 80px */
   left: 50% !important;
   transform: translateX(-50%) !important;
   z-index: 9999 !important;
-  background: rgba(255, 255, 255, 0.75) !important;
-  backdrop-filter: blur(15px) !important;
-  -webkit-backdrop-filter: blur(15px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 40px !important;
-  padding: 12px 40px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 50px !important;
+  padding: 14px 45px !important;
   font-family: 'Outfit', sans-serif !important;
   font-weight: 700 !important;
-  font-size: 16px !important;
-  color: #222 !important;
+  font-size: 15px !important;
+  color: #000 !important;
   cursor: pointer !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2) !important;
   text-transform: uppercase !important;
-  letter-spacing: 1.5px !important;
+  letter-spacing: 2px !important;
   width: auto !important;
-  min-width: 160px !important;
+  min-width: 180px !important;
 }
 
 .custom-ar-button:hover {
-  background: rgba(255, 255, 255, 0.9) !important;
-  transform: translateX(-50%) scale(1.05) !important;
+  background: #fff !important;
+  transform: translateX(-50%) translateY(-3px) scale(1.04) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6) !important;
 }
 
 .custom-ar-button:active {
-  transform: translateX(-50%) scale(0.95) !important;
+  transform: translateX(-50%) scale(0.96) !important;
 }

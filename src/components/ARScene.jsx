@@ -109,7 +109,7 @@ const ARScene = forwardRef((props, ref) => {
         const session = mgr.sceneManager.getSession();
         mgr.interactionManager.update(frame, session);
 
-        // Real-time Visuals & UI
+        // Real-time Visuals & UI (Rubber Band)
         const pos = mgr.interactionManager.getReticlePosition();
         mgr.measureManager.updatePreview(pos);
 
