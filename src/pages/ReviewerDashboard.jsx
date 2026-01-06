@@ -7,7 +7,7 @@ const ReviewerDashboard = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const code = searchParams.get('code');
-    const { status, remoteStream, endCall, sendData, data: remoteData, isDataConnected } = usePeer('reviewer', code);
+    const { status, remoteStream, endCall, sendData, data: remoteData, isDataConnected, isMuted, toggleMic } = usePeer('reviewer', code);
     const videoRef = useRef(null);
 
     useEffect(() => {
@@ -41,6 +41,39 @@ const ReviewerDashboard = () => {
                     <div style={{ padding: '10px 20px', background: '#333', borderRadius: 8, color: 'white' }}>
                         Code: <strong>{code}</strong> ({status})
                     </div>
+                    <button
+                        onClick={toggleMic}
+                        className={`glass-btn ${isMuted ? 'glass-btn-danger' : ''}`}
+                        title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
+                        style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            background: isMuted ? 'rgba(220,53,69,0.5)' : 'rgba(0,191,255,0.4)',
+                            border: isMuted ? '2px solid rgba(220,53,69,0.3)' : '2px solid rgba(0,191,255,0.3)'
+                        }}
+                    >
+                        {isMuted ? (
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                                <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        ) : (
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        )}
+                    </button>
                     <button
                         onClick={handleEndCall}
                         className="glass-btn glass-btn-danger"
