@@ -14,26 +14,47 @@ const UserARView = () => {
     const [showPlan, setShowPlan] = useState(false);
 
     // Pass AR active state to usePeer to optimize bandwidth during AR
-    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic, replaceVideoTrack } = usePeer('user', code, false);
+    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic, replaceVideoTrack, call } = usePeer('user', code, false);
+    const [streamStatus, setStreamStatus] = useState('');
 
     // Switch to canvas stream when AR session starts
     const handleARSessionStart = async () => {
         console.log("AR Session started - switching to canvas stream");
         setArStatus("AR Session Active");
+        setStreamStatus("Starting AR stream...");
 
         // Small delay to ensure canvas is rendering
         setTimeout(async () => {
-            if (arSceneRef.current) {
-                const canvasStream = arSceneRef.current.getCanvasStream(15);
-                if (canvasStream) {
-                    const videoTrack = canvasStream.getVideoTracks()[0];
-                    if (videoTrack) {
-                        const success = await replaceVideoTrack(videoTrack);
-                        if (success) {
-                            console.log("Successfully switched to AR canvas stream");
-                        }
-                    }
+            try {
+                if (!arSceneRef.current) {
+                    setStreamStatus("ERROR: No AR scene ref");
+                    return;
                 }
+
+                const canvasStream = arSceneRef.current.getCanvasStream(15);
+                if (!canvasStream) {
+                    setStreamStatus("ERROR: No canvas stream");
+                    return;
+                }
+
+                const videoTrack = canvasStream.getVideoTracks()[0];
+                if (!videoTrack) {
+                    setStreamStatus("ERROR: No video track in canvas");
+                    return;
+                }
+
+                setStreamStatus("Replacing video track...");
+                const success = await replaceVideoTrack(videoTrack);
+
+                if (success) {
+                    setStreamStatus("✓ AR Stream Active");
+                    console.log("Successfully switched to AR canvas stream");
+                } else {
+                    setStreamStatus("ERROR: Track replace failed");
+                }
+            } catch (e) {
+                setStreamStatus("ERROR: " + e.message);
+                console.error("AR stream error:", e);
             }
         }, 500);
     };
@@ -83,6 +104,25 @@ const UserARView = () => {
                     </div>
                 )}
             </div >
+
+            {/* Debug Status - Bottom Left */}
+            {streamStatus && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: 20,
+                    left: 20,
+                    zIndex: 10,
+                    padding: '8px 16px',
+                    background: streamStatus.includes('ERROR') ? 'rgba(220,53,69,0.9)' : streamStatus.includes('✓') ? 'rgba(40,167,69,0.9)' : 'rgba(0,0,0,0.7)',
+                    borderRadius: 20,
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    maxWidth: 200
+                }}>
+                    {streamStatus}
+                </div>
+            )}
 
             {/* Top Right Controls - Mic and Power Off */}
             <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
