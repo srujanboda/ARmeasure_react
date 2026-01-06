@@ -182,19 +182,52 @@ export const usePeer = (role, code, arActive = false) => {
 
     // Replace video track with a new track (e.g., canvas stream for AR)
     const replaceVideoTrack = async (newVideoTrack) => {
-        if (call && call.peerConnection && newVideoTrack) {
-            try {
-                const senders = call.peerConnection.getSenders();
-                const videoSender = senders.find(s => s.track?.kind === 'video');
-                if (videoSender) {
-                    await videoSender.replaceTrack(newVideoTrack);
-                    console.log("Video track replaced successfully");
-                    setStatus("Streaming AR view to reviewer");
-                    return true;
-                }
-            } catch (e) {
-                console.error("Failed to replace video track:", e);
+        console.log("replaceVideoTrack called, call:", !!call, "peerConnection:", !!call?.peerConnection, "newTrack:", !!newVideoTrack);
+
+        if (!call || !call.peerConnection) {
+            console.error("No active call or peerConnection");
+            return false;
+        }
+
+        if (!newVideoTrack) {
+            console.error("No new video track provided");
+            return false;
+        }
+
+        try {
+            const senders = call.peerConnection.getSenders();
+            console.log("Found senders:", senders.length);
+
+            // Find video sender - check for video track OR null track (when old track was stopped)
+            let videoSender = senders.find(s => s.track?.kind === 'video');
+
+            // If no video track found, look for sender that could be a video sender
+            if (!videoSender) {
+                // Try to find by looking at all senders and their capabilities
+                videoSender = senders.find(s => {
+                    if (!s.track && s.getParameters) {
+                        const params = s.getParameters();
+                        return params.codecs?.some(c => c.mimeType?.includes('video'));
+                    }
+                    return false;
+                });
             }
+
+            // Last resort: use the first sender with null track
+            if (!videoSender) {
+                videoSender = senders.find(s => s.track === null);
+            }
+
+            if (videoSender) {
+                await videoSender.replaceTrack(newVideoTrack);
+                console.log("Video track replaced successfully");
+                setStatus("Streaming AR view to reviewer");
+                return true;
+            } else {
+                console.error("No video sender found in:", senders.map(s => s.track?.kind || 'null'));
+            }
+        } catch (e) {
+            console.error("Failed to replace video track:", e);
         }
         return false;
     };

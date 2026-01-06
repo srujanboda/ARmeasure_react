@@ -106,17 +106,35 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         }
     }, [role, isDataConnected, sendData]);
 
-    // Persist data to localStorage whenever it changes
+    // Persist data to localStorage whenever it changes (debounced to prevent UI blocking)
+    const saveTimeoutRef = useRef(null);
     useEffect(() => {
-        const storageKey = `planParser_${role}`;
-        const dataToSave = {
-            imageBase64,
-            savedRooms,
-            currentPoints
-        };
-        if (imageBase64 || savedRooms.length > 0 || currentPoints.length > 0) {
-            localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+        // Debounce localStorage writes to prevent UI blocking with large data
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
         }
+
+        saveTimeoutRef.current = setTimeout(() => {
+            const storageKey = `planParser_${role}`;
+            const dataToSave = {
+                imageBase64,
+                savedRooms,
+                currentPoints
+            };
+            if (imageBase64 || savedRooms.length > 0 || currentPoints.length > 0) {
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+                } catch (e) {
+                    console.error("Error saving to localStorage:", e);
+                }
+            }
+        }, 300);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
     }, [imageBase64, savedRooms, currentPoints, role]);
 
     // Handle Remote Data - Real-time sync
@@ -317,6 +335,7 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
 
     const handleClearImage = () => {
         if (window.confirm("Are you sure you want to remove the image and all markings?")) {
+            // Update state immediately for responsive UI
             setImage(null);
             setImageBase64(null);
             setSavedRooms([]);
@@ -324,12 +343,15 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
             setStatus("Image removed");
             setIsSaved(false);
 
-            const storageKey = `planParser_${role}`;
-            localStorage.removeItem(storageKey);
+            // Defer heavy operations to not block UI
+            requestAnimationFrame(() => {
+                const storageKey = `planParser_${role}`;
+                localStorage.removeItem(storageKey);
 
-            if (isDataConnected && sendData) {
-                sendData({ type: 'PLAN_REMOVE_IMAGE' });
-            }
+                if (isDataConnected && sendData) {
+                    sendData({ type: 'PLAN_REMOVE_IMAGE' });
+                }
+            });
         }
     };
 
