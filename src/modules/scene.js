@@ -54,6 +54,21 @@ export class SceneManager {
         return this.renderer.xr.getSession();
     }
 
+    // Get canvas stream for WebRTC streaming (captures AR view with overlays)
+    getCanvasStream(frameRate = 30) {
+        if (this.renderer && this.renderer.domElement) {
+            try {
+                const stream = this.renderer.domElement.captureStream(frameRate);
+                console.log("Canvas stream created:", stream);
+                return stream;
+            } catch (e) {
+                console.error("Failed to capture canvas stream:", e);
+                return null;
+            }
+        }
+        return null;
+    }
+
     dispose() {
         if (this.renderer) {
             this.renderer.dispose();

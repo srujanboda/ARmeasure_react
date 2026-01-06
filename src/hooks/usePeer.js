@@ -180,6 +180,25 @@ export const usePeer = (role, code, arActive = false) => {
         }
     };
 
+    // Replace video track with a new track (e.g., canvas stream for AR)
+    const replaceVideoTrack = async (newVideoTrack) => {
+        if (call && call.peerConnection && newVideoTrack) {
+            try {
+                const senders = call.peerConnection.getSenders();
+                const videoSender = senders.find(s => s.track?.kind === 'video');
+                if (videoSender) {
+                    await videoSender.replaceTrack(newVideoTrack);
+                    console.log("Video track replaced successfully");
+                    setStatus("Streaming AR view to reviewer");
+                    return true;
+                }
+            } catch (e) {
+                console.error("Failed to replace video track:", e);
+            }
+        }
+        return false;
+    };
+
     const toggleCamera = async () => {
         const nextMode = facingMode === 'user' ? 'environment' : 'user';
         setFacingMode(nextMode);
@@ -237,5 +256,5 @@ export const usePeer = (role, code, arActive = false) => {
         setStatus("Call Ended Manually");
     };
 
-    return { peer, call, remoteStream, status, endCall, sendData, data, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic };
+    return { peer, call, remoteStream, status, endCall, sendData, data, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic, replaceVideoTrack };
 };
