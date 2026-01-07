@@ -65,7 +65,6 @@ export const usePeer = (role, code, arActive = false) => {
         }
 
         dataConn.on('data', (receivedData) => {
-            console.log("Data received:", receivedData?.type);
             setIsDataConnected(true); // Ensure connected state if we receive data
             isDataConnectedRef.current = true;
             setData(receivedData);
@@ -164,10 +163,8 @@ export const usePeer = (role, code, arActive = false) => {
                     if (role === 'user' && !isDataConnectedRef.current) {
                         // Check if peer is still connected to server before retrying
                         if (p.disconnected) {
-                            console.log("Peer disconnected from server, attempting reconnect...");
                             p.reconnect();
                         } else {
-                            console.log("Data connection not open, retrying...");
                             connectData();
                         }
                     }

@@ -189,20 +189,6 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
     useEffect(() => {
         if (!isDataConnected || !sendData) return;
 
-        // 1. Sync pending image
-        if (pendingImageRef.current) {
-            console.log("Connection restored, syncing image...");
-            const base64 = pendingImageRef.current;
-            pendingImageRef.current = null;
-            sendData({ type: 'PLAN_IMAGE', data: base64 });
-            setStatus("Plan synced with reviewer");
-            if (retryTimeoutRef.current) {
-                clearTimeout(retryTimeoutRef.current);
-                retryTimeoutRef.current = null;
-            }
-        }
-
-        // 2. Sync markings if they exist
         if (role === 'reviewer' && (savedRooms.length > 0 || currentPoints.length > 0)) {
             sendData({ type: 'PLAN_SYNC', savedRooms, currentPoints });
         }
@@ -214,14 +200,11 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         setImageBase64(base64);
         setIsSaved(true);
 
-        // Store pending image if connection not ready
         if (!isDataConnected || !sendData) {
-            console.log("Connection not ready, storing image for later");
             pendingImageRef.current = base64;
             setStatus("Image saved. Waiting for connection to reviewer...");
         } else {
             // Connection is ready, send immediately
-            console.log("Connection ready, sending image immediately");
             sendData({ type: 'PLAN_IMAGE', data: base64 });
             setStatus("Image saved and sent to reviewer");
         }
@@ -230,7 +213,6 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
     // Auto-sync image when connection becomes ready
     useEffect(() => {
         if (role === 'user' && isDataConnected && sendData && pendingImageRef.current) {
-            console.log("Connection established! Sending pending image...");
             sendData({ type: 'PLAN_IMAGE', data: pendingImageRef.current });
             pendingImageRef.current = null;
             setStatus("Plan synced with reviewer");

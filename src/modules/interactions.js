@@ -43,14 +43,12 @@ export class InteractionManager {
         // 1. Initialize hit test source using 'viewer' space
         if (!this.hitTestSource && !this.isRequestingHitTest) {
             this.isRequestingHitTest = true;
-            console.log("Requesting hit test source...");
 
             // Wait a few frames for session to stabilize if needed
             session.requestReferenceSpace('viewer').then((referenceSpace) => {
                 session.requestHitTestSource({ space: referenceSpace }).then((source) => {
                     this.hitTestSource = source;
                     this.isRequestingHitTest = false;
-                    console.log("Hit test source created successfully!");
                 }).catch(err => {
                     console.error("Hit test source request failed:", err);
                     this.isRequestingHitTest = false;
@@ -82,7 +80,6 @@ export class InteractionManager {
                 const pose = hit.getPose(referenceSpace);
 
                 if (pose) {
-                    if (!this.reticle.visible) console.log("Reticle visible now!");
                     this.reticle.visible = true;
                     this.reticle.matrix.fromArray(pose.transform.matrix);
                     this.reticle.updateMatrixWorld(true);

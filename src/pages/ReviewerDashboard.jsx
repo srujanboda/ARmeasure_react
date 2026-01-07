@@ -34,9 +34,7 @@ const ReviewerDashboard = () => {
     // Handle incoming measurement data from user
     useEffect(() => {
         if (remoteData) {
-            console.log("Reviewer received data:", remoteData);
             if (remoteData.type === 'MEASUREMENT_SYNC') {
-                console.log("Setting live measurements:", remoteData.payload);
                 setLiveMeasurements(remoteData.payload);
             }
         }
@@ -309,7 +307,7 @@ const ReviewerDashboard = () => {
                                 )}
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: liveMeasurements.area ? '1fr 1fr 1fr' : '1fr 1fr', gap: 12 }}>
                                 <div style={{
                                     padding: 12,
                                     background: 'rgba(0,0,0,0.3)',
@@ -317,7 +315,7 @@ const ReviewerDashboard = () => {
                                     textAlign: 'center'
                                 }}>
                                     <div style={{ fontSize: 11, color: '#00BFFF', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase' }}>Total Distance</div>
-                                    <div style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>{liveMeasurements.total || '0.00 m'}</div>
+                                    <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{liveMeasurements.total || '0.00 m'}</div>
                                 </div>
                                 <div style={{
                                     padding: 12,
@@ -326,20 +324,41 @@ const ReviewerDashboard = () => {
                                     textAlign: 'center'
                                 }}>
                                     <div style={{ fontSize: 11, color: '#00BFFF', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase' }}>Points</div>
-                                    <div style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>{liveMeasurements.count || 0}</div>
+                                    <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{liveMeasurements.count || 0}</div>
                                 </div>
+                                {liveMeasurements.area && (
+                                    <div style={{
+                                        padding: 12,
+                                        background: 'rgba(40, 167, 69, 0.2)',
+                                        borderRadius: 8,
+                                        textAlign: 'center'
+                                    }}>
+                                        <div style={{ fontSize: 11, color: '#28a745', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase' }}>Area</div>
+                                        <div style={{ fontSize: 20, fontWeight: 700, color: '#28a745' }}>{liveMeasurements.area}</div>
+                                    </div>
+                                )}
                             </div>
 
-                            {liveMeasurements.area && (
-                                <div style={{
-                                    marginTop: 12,
-                                    padding: 12,
-                                    background: 'rgba(0,0,0,0.3)',
-                                    borderRadius: 8,
-                                    textAlign: 'center'
-                                }}>
-                                    <div style={{ fontSize: 11, color: '#28a745', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase' }}>Area</div>
-                                    <div style={{ fontSize: 24, fontWeight: 700, color: '#28a745' }}>{liveMeasurements.area}</div>
+                            {liveMeasurements.segments && liveMeasurements.segments.length > 0 && (
+                                <div style={{ marginTop: 15, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12 }}>
+                                    <div style={{ fontSize: 11, color: '#fff', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', opacity: 0.6 }}>Detailed Segments</div>
+                                    <div style={{ maxHeight: 200, overflowY: 'auto', paddingRight: 5 }}>
+                                        {liveMeasurements.segments.map((seg, idx) => (
+                                            <div key={idx} style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                padding: '8px 0',
+                                                borderBottom: idx === liveMeasurements.segments.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)'
+                                            }}>
+                                                <span style={{ fontSize: 13, color: '#ccc' }}>
+                                                    Point {seg.from} → {seg.to === '?' ? 'Measuring...' : `Point ${seg.to}`}
+                                                </span>
+                                                <span style={{ fontSize: 14, fontWeight: 600, color: '#00BFFF' }}>
+                                                    {seg.distanceText}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>

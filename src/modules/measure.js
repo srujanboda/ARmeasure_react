@@ -30,7 +30,6 @@ export class MeasureManager {
         if (this.points.length > 0) {
             const lastPoint = this.points[this.points.length - 1];
             if (position.distanceTo(lastPoint) < 0.1) {
-                console.log("Point too close, ignoring");
                 return;
             }
         }
@@ -253,6 +252,31 @@ export class MeasureManager {
             area += p1.x * p2.z - p2.x * p1.z;
         }
         return Math.abs(area) / 2;
+    }
+
+    getSegments(liveReticlePos) {
+        const segments = [];
+        for (let i = 1; i < this.points.length; i++) {
+            segments.push({
+                from: i,
+                to: i + 1,
+                distance: this.points[i - 1].distanceTo(this.points[i])
+            });
+        }
+        if (this.isClosed) {
+            segments.push({
+                from: this.points.length,
+                to: 1,
+                distance: this.points[this.points.length - 1].distanceTo(this.points[0])
+            });
+        } else if (liveReticlePos && this.points.length > 0) {
+            segments.push({
+                from: this.points.length,
+                to: '?',
+                distance: this.points[this.points.length - 1].distanceTo(liveReticlePos)
+            });
+        }
+        return segments;
     }
 
     getPointCount() {

@@ -138,7 +138,13 @@ const ARScene = forwardRef((props, ref) => {
         const areaVal = mgr.measureManager.getArea();
         const areaText = areaVal > 0 ? `${areaVal.toFixed(2)} m²` : null;
 
-        setStats({ total: text, count, area: areaText });
+        // Segments breakdown
+        const segments = mgr.measureManager.getSegments(livePos).map(s => ({
+            ...s,
+            distanceText: formatDistance(s.distance, mgr.currentUnit)
+        }));
+
+        setStats({ total: text, count, area: areaText, segments });
     };
 
     useEffect(() => {
