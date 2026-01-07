@@ -62,6 +62,7 @@ export const usePeer = (role, code, arActive = false) => {
 
         dataConn.on('data', (receivedData) => {
             console.log("Data received:", receivedData?.type);
+            setIsDataConnected(true); // Ensure connected state if we receive data
             setData(receivedData);
         });
 
@@ -135,7 +136,7 @@ export const usePeer = (role, code, arActive = false) => {
             setPeer(p);
             if (role === 'user') {
                 startCall(p, targetId);
-                const dataConn = p.connect(targetId);
+                const dataConn = p.connect(targetId, { reliable: true });
                 setupDataEvents(dataConn);
             }
         });
@@ -143,6 +144,20 @@ export const usePeer = (role, code, arActive = false) => {
         p.on('connection', (dataConn) => {
             console.log("Incoming data connection-from:", dataConn.peer);
             setupDataEvents(dataConn);
+            // Reviewer sends PING to confirm connection
+            if (role === 'reviewer') {
+                setTimeout(() => {
+                    if (dataConn.open) {
+                        console.log("Sending PING to user");
+                        dataConn.send({ type: 'PING' });
+                    } else {
+                        dataConn.on('open', () => {
+                            console.log("Sending PING (on open) to user");
+                            dataConn.send({ type: 'PING' });
+                        });
+                    }
+                }, 1000);
+            }
         });
 
         p.on('call', (incomingCall) => {
