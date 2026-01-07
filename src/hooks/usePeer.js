@@ -142,11 +142,16 @@ export const usePeer = (role, code, arActive = false) => {
             console.log("Peer opened with ID:", id);
             setStatus(role === 'reviewer' ? "Waiting for someone to join..." : "Ready to call...");
             setPeer(p);
+
             if (role === 'user') {
                 startCall(p, targetId);
 
                 // Initial data connection
                 const connectData = () => {
+                    // Avoid multiple simultaneous connection attempts
+                    if (isDataConnectedRef.current || (connRef.current && connRef.current.open)) {
+                        return;
+                    }
                     console.log("Attempting to connect data channel to:", targetId);
                     const dataConn = p.connect(targetId, { reliable: true });
                     setupDataEvents(dataConn);
@@ -156,9 +161,15 @@ export const usePeer = (role, code, arActive = false) => {
 
                 // Retry data connection if it fails to open after 5 seconds
                 const retryInterval = setInterval(() => {
-                    if (role === 'user' && !isDataConnectedRef.current && !connRef.current?.open) {
-                        console.log("Data connection not open, retrying...");
-                        connectData();
+                    if (role === 'user' && !isDataConnectedRef.current) {
+                        // Check if peer is still connected to server before retrying
+                        if (p.disconnected) {
+                            console.log("Peer disconnected from server, attempting reconnect...");
+                            p.reconnect();
+                        } else {
+                            console.log("Data connection not open, retrying...");
+                            connectData();
+                        }
                     }
                 }, 5000);
 
@@ -218,6 +229,7 @@ export const usePeer = (role, code, arActive = false) => {
         });
 
         return () => {
+            if (p._retryInterval) clearInterval(p._retryInterval);
             p.destroy();
         };
     }, [role, code, startCall, setupCallEvents, setupDataEvents, facingMode, arActive]);

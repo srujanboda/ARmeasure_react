@@ -106,29 +106,36 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         }
     }, [role, isDataConnected, sendData]);
 
-    // Persist data to localStorage whenever it changes (debounced to prevent UI blocking)
+    // Persist data to localStorage whenever it changes (debounced & yielding)
     const saveTimeoutRef = useRef(null);
     useEffect(() => {
-        // Debounce localStorage writes to prevent UI blocking with large data
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
 
         saveTimeoutRef.current = setTimeout(() => {
             const storageKey = `planParser_${role}`;
+            // If image is removed, clear storage immediately
+            if (!imageBase64 && savedRooms.length === 0 && currentPoints.length === 0) {
+                localStorage.removeItem(storageKey);
+                return;
+            }
+
             const dataToSave = {
                 imageBase64,
                 savedRooms,
                 currentPoints
             };
-            if (imageBase64 || savedRooms.length > 0 || currentPoints.length > 0) {
+
+            // Wrap in another timeout to ensure we yield before JSON.stringify (heavy)
+            setTimeout(() => {
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(dataToSave));
                 } catch (e) {
                     console.error("Error saving to localStorage:", e);
                 }
-            }
-        }, 300);
+            }, 0);
+        }, 500); // Increased debounce to 500ms
 
         return () => {
             if (saveTimeoutRef.current) {
@@ -178,18 +185,26 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         draw();
     }, [draw]);
 
-    // Retry sending image when connection becomes ready
+    // Consolidated Connection Management (Retry & Sync)
     useEffect(() => {
-        if (isDataConnected && pendingImageRef.current && sendData) {
-            console.log("Connection ready, sending pending image");
-            const imageToSend = pendingImageRef.current;
+        if (!isDataConnected || !sendData) return;
+
+        // 1. Sync pending image
+        if (pendingImageRef.current) {
+            console.log("Connection restored, syncing image...");
+            const base64 = pendingImageRef.current;
             pendingImageRef.current = null;
-            sendData({ type: 'PLAN_IMAGE', data: imageToSend });
-            setStatus(role === 'user' ? "Image saved and sent to reviewer" : "Plan received from user");
+            sendData({ type: 'PLAN_IMAGE', data: base64 });
+            setStatus("Plan synced with reviewer");
             if (retryTimeoutRef.current) {
                 clearTimeout(retryTimeoutRef.current);
                 retryTimeoutRef.current = null;
             }
+        }
+
+        // 2. Sync markings if they exist
+        if (role === 'reviewer' && (savedRooms.length > 0 || currentPoints.length > 0)) {
+            sendData({ type: 'PLAN_SYNC', savedRooms, currentPoints });
         }
     }, [isDataConnected, sendData, role]);
 
@@ -254,7 +269,7 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.3); // Compressed to 0.3
                     const compressedImg = new Image();
                     compressedImg.onload = () => {
                         saveAndSendImage(compressedBase64, compressedImg);
@@ -345,7 +360,11 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
 
     const handleClearImage = () => {
         if (window.confirm("Are you sure you want to remove the image and all markings?")) {
-            // Update state immediately for responsive UI
+            // Cancel any pending saves immediately
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+
+            // Update state immediately (shallow reset)
             setImage(null);
             setImageBase64(null);
             setSavedRooms([]);
@@ -353,15 +372,15 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
             setStatus("Image removed");
             setIsSaved(false);
 
-            // Defer heavy operations to not block UI
-            requestAnimationFrame(() => {
+            // Defer heavy serial work to background
+            setTimeout(() => {
                 const storageKey = `planParser_${role}`;
                 localStorage.removeItem(storageKey);
 
                 if (isDataConnected && sendData) {
                     sendData({ type: 'PLAN_REMOVE_IMAGE' });
                 }
-            });
+            }, 0);
         }
     };
 

@@ -10,6 +10,7 @@ const UserARView = () => {
     const code = searchParams.get('code');
     const arSceneRef = useRef(null);
     const [stats, setStats] = useState({ total: "0.00 m", count: 0 });
+    const lastSyncTimeRef = useRef(0);
     const [arStatus, setArStatus] = useState("Initializing AR...");
     const [showPlan, setShowPlan] = useState(false);
     const [isArActive, setIsArActive] = useState(false);
@@ -73,28 +74,32 @@ const UserARView = () => {
         };
     }, []);
 
-    // Sync measurement data to reviewer when stats change during AR
+    // Sync measurement data to reviewer when stats change during AR (Throttled)
     useEffect(() => {
-        console.log("Stats changed:", stats, "isArActive:", isArActive, "isDataConnected:", isDataConnected);
         if (isArActive && isDataConnected && sendData) {
-            console.log("Sending MEASUREMENT_SYNC to reviewer");
-            // Send measurement data to reviewer
-            sendData({
-                type: 'MEASUREMENT_SYNC',
-                payload: {
-                    total: stats.total,
-                    count: stats.count,
-                    area: stats.area || null,
-                    isActive: true,
-                    timestamp: Date.now()
-                }
-            });
+            const now = Date.now();
+            // Only sync once every 200ms to avoid UI blocking and reticle issues
+            if (now - lastSyncTimeRef.current >= 200) {
+                console.log("Syncing measurements (throttled)");
+                sendData({
+                    type: 'MEASUREMENT_SYNC',
+                    payload: {
+                        total: stats.total,
+                        count: stats.count,
+                        area: stats.area || null,
+                        isActive: true,
+                        timestamp: now
+                    }
+                });
+                lastSyncTimeRef.current = now;
+            }
         }
     }, [stats, isArActive, isDataConnected, sendData]);
 
     // Notify reviewer when AR session ends
     useEffect(() => {
         if (!isArActive && isDataConnected && sendData) {
+            console.log("Final measurement sync on AR end");
             sendData({
                 type: 'MEASUREMENT_SYNC',
                 payload: {
@@ -106,7 +111,7 @@ const UserARView = () => {
                 }
             });
         }
-    }, [isArActive]);
+    }, [isArActive, isDataConnected, sendData]);
 
     const handleEndCall = () => {
         endCall();
