@@ -49,6 +49,39 @@ const UserARView = () => {
         }
     };
 
+    // Sync measurement data to reviewer when stats change during AR
+    useEffect(() => {
+        if (isArActive && isDataConnected && sendData) {
+            // Send measurement data to reviewer
+            sendData({
+                type: 'MEASUREMENT_SYNC',
+                payload: {
+                    total: stats.total,
+                    count: stats.count,
+                    area: stats.area || null,
+                    isActive: true,
+                    timestamp: Date.now()
+                }
+            });
+        }
+    }, [stats, isArActive, isDataConnected, sendData]);
+
+    // Notify reviewer when AR session ends
+    useEffect(() => {
+        if (!isArActive && isDataConnected && sendData) {
+            sendData({
+                type: 'MEASUREMENT_SYNC',
+                payload: {
+                    total: stats.total,
+                    count: stats.count,
+                    area: stats.area || null,
+                    isActive: false,
+                    timestamp: Date.now()
+                }
+            });
+        }
+    }, [isArActive]);
+
     const handleEndCall = () => {
         endCall();
         navigate('/');

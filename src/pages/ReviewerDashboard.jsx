@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import PlanParser from '../components/PlanParser';
 import { usePeer } from '../hooks/usePeer';
@@ -9,6 +9,9 @@ const ReviewerDashboard = () => {
     const code = searchParams.get('code');
     const { status, remoteStream, endCall, sendData, data: remoteData, isDataConnected, isMuted, toggleMic } = usePeer('reviewer', code);
     const videoRef = useRef(null);
+
+    // Live measurements from user's AR session
+    const [liveMeasurements, setLiveMeasurements] = useState(null);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -27,6 +30,13 @@ const ReviewerDashboard = () => {
             }
         };
     }, [remoteStream]);
+
+    // Handle incoming measurement data from user
+    useEffect(() => {
+        if (remoteData && remoteData.type === 'MEASUREMENT_SYNC') {
+            setLiveMeasurements(remoteData.payload);
+        }
+    }, [remoteData]);
 
     const handleEndCall = () => {
         endCall();
@@ -201,6 +211,87 @@ const ReviewerDashboard = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Live Measurements Panel */}
+                    {liveMeasurements && (
+                        <div style={{
+                            marginTop: 15,
+                            padding: 16,
+                            background: liveMeasurements.isActive ? 'rgba(0, 191, 255, 0.1)' : 'rgba(100, 100, 100, 0.2)',
+                            borderRadius: 12,
+                            border: liveMeasurements.isActive ? '2px solid rgba(0, 191, 255, 0.4)' : '1px solid rgba(100, 100, 100, 0.3)'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00BFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M2 12h20M12 2v20"></path>
+                                    </svg>
+                                    <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Live Measurements</span>
+                                </div>
+                                {liveMeasurements.isActive ? (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        padding: '4px 10px',
+                                        background: 'rgba(40, 167, 69, 0.3)',
+                                        borderRadius: 12,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        color: '#28a745'
+                                    }}>
+                                        <div style={{ width: 6, height: 6, background: '#28a745', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
+                                        AR ACTIVE
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        padding: '4px 10px',
+                                        background: 'rgba(100, 100, 100, 0.3)',
+                                        borderRadius: 12,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        color: '#888'
+                                    }}>
+                                        AR ENDED
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div style={{
+                                    padding: 12,
+                                    background: 'rgba(0,0,0,0.3)',
+                                    borderRadius: 8,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{ fontSize: 11, color: '#00BFFF', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase' }}>Total Distance</div>
+                                    <div style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>{liveMeasurements.total || '0.00 m'}</div>
+                                </div>
+                                <div style={{
+                                    padding: 12,
+                                    background: 'rgba(0,0,0,0.3)',
+                                    borderRadius: 8,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{ fontSize: 11, color: '#00BFFF', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase' }}>Points</div>
+                                    <div style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>{liveMeasurements.count || 0}</div>
+                                </div>
+                            </div>
+
+                            {liveMeasurements.area && (
+                                <div style={{
+                                    marginTop: 12,
+                                    padding: 12,
+                                    background: 'rgba(0,0,0,0.3)',
+                                    borderRadius: 8,
+                                    textAlign: 'center'
+                                }}>
+                                    <div style={{ fontSize: 11, color: '#28a745', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase' }}>Area</div>
+                                    <div style={{ fontSize: 24, fontWeight: 700, color: '#28a745' }}>{liveMeasurements.area}</div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Plan Column - Equal width with User View */}
