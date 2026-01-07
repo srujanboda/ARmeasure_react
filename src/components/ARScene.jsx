@@ -41,10 +41,6 @@ const ARScene = forwardRef((props, ref) => {
             logicRef.current.currentUnit = next;
             logicRef.current.measureManager?.setUnit(next);
             updateUI();
-        },
-        // Get canvas stream for WebRTC streaming during AR
-        getCanvasStream: (frameRate = 15) => {
-            return logicRef.current.sceneManager?.getCanvasStream(frameRate);
         }
     }));
 
