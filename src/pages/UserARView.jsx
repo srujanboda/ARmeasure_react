@@ -15,8 +15,8 @@ const UserARView = () => {
     const [showPlan, setShowPlan] = useState(false);
     const [isArActive, setIsArActive] = useState(false);
 
-    // Keep camera stream running - use isArActive to optimize constraints without session drop
-    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic } = usePeer('user', code, isArActive);
+    // Keep camera stream running - fixed resolution for now to avoid session interruption
+    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic } = usePeer('user', code, false);
     const [streamStatus, setStreamStatus] = useState('');
 
     // Handle AR session start
@@ -122,6 +122,10 @@ const UserARView = () => {
                         <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{stats.area}</div>
                     </div>
                 )}
+                {/* Hit Test Status (Subtle) */}
+                <div style={{ fontSize: 8, color: arStatus.includes('Active') ? '#0f0' : '#fff', opacity: 0.5, marginTop: 4 }}>
+                    {arStatus}
+                </div>
             </div >
 
             {/* Top Right Controls - Mic and Power Off */}
