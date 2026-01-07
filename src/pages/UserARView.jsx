@@ -34,6 +34,45 @@ const UserARView = () => {
         navigate('/');
     };
 
+    // Debug logs state
+    const [debugLogs, setDebugLogs] = useState([]);
+
+    // Capture console logs for on-screen display
+    useEffect(() => {
+        const formatArgs = (args) => args.map(arg =>
+            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' ');
+
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        console.log = (...args) => {
+            const msg = formatArgs(args);
+            // Only show relevant logs
+            if (msg.includes("sendData") || msg.includes("Stats") || msg.includes("Data")) {
+                setDebugLogs(prev => [...prev.slice(-14), `🔵 ${msg}`]);
+            }
+            originalLog.apply(console, args);
+        };
+
+        console.warn = (...args) => {
+            setDebugLogs(prev => [...prev.slice(-14), `⚠️ ${formatArgs(args)}`]);
+            originalWarn.apply(console, args);
+        };
+
+        console.error = (...args) => {
+            setDebugLogs(prev => [...prev.slice(-14), `🔴 ${formatArgs(args)}`]);
+            originalError.apply(console, args);
+        };
+
+        return () => {
+            console.log = originalLog;
+            console.warn = originalWarn;
+            console.error = originalError;
+        };
+    }, []);
+
     // Sync measurement data to reviewer when stats change during AR
     useEffect(() => {
         console.log("Stats changed:", stats, "isArActive:", isArActive, "isDataConnected:", isDataConnected);
@@ -76,6 +115,30 @@ const UserARView = () => {
 
     return (
         <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: 'transparent' }}>
+            {/* Debug Console Overlay */}
+            <div style={{
+                position: 'absolute',
+                top: 60,
+                left: 10,
+                right: 10,
+                height: 150,
+                overflowY: 'auto',
+                background: 'rgba(0,0,0,0.7)',
+                color: '#0f0',
+                fontSize: 10,
+                fontFamily: 'monospace',
+                padding: 10,
+                borderRadius: 8,
+                pointerEvents: 'none',
+                zIndex: 9999
+            }}>
+                {debugLogs.map((log, i) => (
+                    <div key={i} style={{ marginBottom: 4, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        {log}
+                    </div>
+                ))}
+            </div>
+
             {/* AR Scene in background */}
             <ARScene
                 ref={arSceneRef}

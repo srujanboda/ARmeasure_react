@@ -175,8 +175,19 @@ export const usePeer = (role, code, arActive = false) => {
     }, [arActive, role, call, refreshMediaTracks]);
 
     const sendData = (payload) => {
-        if (conn && conn.open) {
+        if (!conn) {
+            console.warn("sendData failed: No connection object");
+            return;
+        }
+        if (!conn.open) {
+            console.warn("sendData failed: Connection is not open", conn.peer, conn.metadata);
+            return;
+        }
+        try {
             conn.send(payload);
+            console.log("Data sent:", payload.type);
+        } catch (e) {
+            console.error("sendData exception:", e);
         }
     };
 
