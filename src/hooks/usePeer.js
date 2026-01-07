@@ -51,22 +51,35 @@ export const usePeer = (role, code, arActive = false) => {
     }, [role]);
 
     const setupDataEvents = useCallback((dataConn) => {
+        console.log("Setting up data connection events for:", dataConn.peer);
         setConn(dataConn);
+
+        // If already open, set connected state
+        if (dataConn.open) {
+            console.log("Data connection is ALREADY open");
+            setIsDataConnected(true);
+        }
+
         dataConn.on('data', (receivedData) => {
             console.log("Data received:", receivedData?.type);
             setData(receivedData);
         });
+
         dataConn.on('open', () => {
-            console.log("Data connection open with:", dataConn.peer);
+            console.log("Data connection EVENT: open with", dataConn.peer);
             setIsDataConnected(true);
         });
+
         dataConn.on('close', () => {
+            console.log("Data connection EVENT: close");
             setConn(null);
             setIsDataConnected(false);
         });
+
         dataConn.on('error', (err) => {
-            console.error("Data connection error:", err);
-            setIsDataConnected(false);
+            console.error("Data connection EVENT: error", err);
+            // Don't necessarily disconnect on error, depends on error
+            // setIsDataConnected(false); 
         });
     }, []);
 
