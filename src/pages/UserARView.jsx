@@ -113,25 +113,6 @@ const UserARView = () => {
                 )}
             </div >
 
-            {/* Debug Status - Bottom Left */}
-            {streamStatus && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: 20,
-                    left: 20,
-                    zIndex: 10,
-                    padding: '8px 16px',
-                    background: streamStatus.includes('ERROR') || streamStatus.includes('failed') ? 'rgba(220,53,69,0.9)' : streamStatus.includes('✓') ? 'rgba(40,167,69,0.9)' : 'rgba(0,0,0,0.7)',
-                    borderRadius: 20,
-                    color: '#fff',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    maxWidth: 250
-                }}>
-                    {streamStatus}
-                </div>
-            )}
-
             {/* Top Right Controls - Mic and Power Off */}
             <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
                 <button

@@ -33,8 +33,12 @@ const ReviewerDashboard = () => {
 
     // Handle incoming measurement data from user
     useEffect(() => {
-        if (remoteData && remoteData.type === 'MEASUREMENT_SYNC') {
-            setLiveMeasurements(remoteData.payload);
+        if (remoteData) {
+            console.log("Reviewer received data:", remoteData);
+            if (remoteData.type === 'MEASUREMENT_SYNC') {
+                console.log("Setting live measurements:", remoteData.payload);
+                setLiveMeasurements(remoteData.payload);
+            }
         }
     }, [remoteData]);
 
