@@ -43,13 +43,14 @@ export class InteractionManager {
         // 1. Initialize hit test source using 'viewer' space
         if (!this.hitTestSource && !this.isRequestingHitTest) {
             this.isRequestingHitTest = true;
+            console.log("Requesting hit test source...");
 
             // Wait a few frames for session to stabilize if needed
             session.requestReferenceSpace('viewer').then((referenceSpace) => {
                 session.requestHitTestSource({ space: referenceSpace }).then((source) => {
                     this.hitTestSource = source;
                     this.isRequestingHitTest = false;
-                    console.log("Hit test source created with 'viewer' space");
+                    console.log("Hit test source created successfully!");
                 }).catch(err => {
                     console.error("Hit test source request failed:", err);
                     this.isRequestingHitTest = false;
@@ -63,15 +64,25 @@ export class InteractionManager {
         // 2. Process hit test results
         if (this.hitTestSource && frame) {
             const referenceSpace = this.renderer.xr.getReferenceSpace();
-            if (!referenceSpace) return;
+            if (!referenceSpace) {
+                // Throttle this log
+                if (frame.session && frame.session.requestAnimationFrame % 60 === 0) {
+                    console.warn("No reference space available yet");
+                }
+                return;
+            }
 
             const hitTestResults = frame.getHitTestResults(this.hitTestSource);
+
+            // Log hit test count occasionally
+            // if (Math.random() < 0.01) console.log("Hit results:", hitTestResults.length);
 
             if (hitTestResults.length > 0) {
                 const hit = hitTestResults[0];
                 const pose = hit.getPose(referenceSpace);
 
                 if (pose) {
+                    if (!this.reticle.visible) console.log("Reticle visible now!");
                     this.reticle.visible = true;
                     this.reticle.matrix.fromArray(pose.transform.matrix);
                     this.reticle.updateMatrixWorld(true);
