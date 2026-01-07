@@ -212,6 +212,16 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         }
     }, [sendData, isDataConnected]);
 
+    // Auto-sync image when connection becomes ready
+    useEffect(() => {
+        if (role === 'user' && isDataConnected && sendData && pendingImageRef.current) {
+            console.log("Connection established! Sending pending image...");
+            sendData({ type: 'PLAN_IMAGE', data: pendingImageRef.current });
+            pendingImageRef.current = null;
+            setStatus("Plan synced with reviewer");
+        }
+    }, [isDataConnected, sendData, role]);
+
     const handleUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -375,20 +385,29 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                     <input type="file" accept="image/*" onChange={handleUpload} style={{ fontSize: 12 }} />
                     {role === 'user' && image && (
-                        <button
-                            onClick={handleSave}
-                            style={{
-                                backgroundColor: isSaved ? '#28a745' : '#007bff',
-                                padding: '8px 16px',
-                                borderRadius: 8,
-                                color: 'white',
-                                border: 'none',
-                                cursor: 'pointer'
-                            }}
-                            title={isSaved ? "Image saved and sent to reviewer" : "Save and send to reviewer"}
-                        >
-                            {isSaved ? '✓ Saved' : 'Save'}
-                        </button>
+                        <>
+                            <button
+                                onClick={handleSave}
+                                style={{
+                                    backgroundColor: isSaved ? '#28a745' : '#007bff',
+                                    padding: '8px 16px',
+                                    borderRadius: 8,
+                                    color: 'white',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                                title={isSaved ? "Image saved and sent to reviewer" : "Save and send to reviewer"}
+                            >
+                                {isSaved ? '✓ Saved' : 'Save'}
+                            </button>
+                            <button
+                                onClick={handleClearImage}
+                                style={{ backgroundColor: '#dc3545', padding: '8px 16px', borderRadius: 8, color: 'white', border: 'none', cursor: 'pointer' }}
+                                title="Remove image"
+                            >
+                                Remove Image
+                            </button>
+                        </>
                     )}
                     {role === 'reviewer' && (
                         <>

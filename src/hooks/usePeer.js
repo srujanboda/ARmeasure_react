@@ -10,6 +10,8 @@ export const usePeer = (role, code, arActive = false) => {
     const [data, setData] = useState(null);
     const [isDataConnected, setIsDataConnected] = useState(false);
     const localStreamRef = useRef(null);
+    const isDataConnectedRef = useRef(false);
+    const connRef = useRef(null);
     const [facingMode, setFacingMode] = useState('environment');
     const [isMuted, setIsMuted] = useState(false);
 
@@ -53,28 +55,34 @@ export const usePeer = (role, code, arActive = false) => {
     const setupDataEvents = useCallback((dataConn) => {
         console.log("Setting up data connection events for:", dataConn.peer);
         setConn(dataConn);
+        connRef.current = dataConn;
 
         // If already open, set connected state
         if (dataConn.open) {
             console.log("Data connection is ALREADY open");
             setIsDataConnected(true);
+            isDataConnectedRef.current = true;
         }
 
         dataConn.on('data', (receivedData) => {
             console.log("Data received:", receivedData?.type);
             setIsDataConnected(true); // Ensure connected state if we receive data
+            isDataConnectedRef.current = true;
             setData(receivedData);
         });
 
         dataConn.on('open', () => {
             console.log("Data connection EVENT: open with", dataConn.peer);
             setIsDataConnected(true);
+            isDataConnectedRef.current = true;
         });
 
         dataConn.on('close', () => {
             console.log("Data connection EVENT: close");
             setConn(null);
+            connRef.current = null;
             setIsDataConnected(false);
+            isDataConnectedRef.current = false;
         });
 
         dataConn.on('error', (err) => {
@@ -136,8 +144,26 @@ export const usePeer = (role, code, arActive = false) => {
             setPeer(p);
             if (role === 'user') {
                 startCall(p, targetId);
-                const dataConn = p.connect(targetId, { reliable: true });
-                setupDataEvents(dataConn);
+
+                // Initial data connection
+                const connectData = () => {
+                    console.log("Attempting to connect data channel to:", targetId);
+                    const dataConn = p.connect(targetId, { reliable: true });
+                    setupDataEvents(dataConn);
+                };
+
+                connectData();
+
+                // Retry data connection if it fails to open after 5 seconds
+                const retryInterval = setInterval(() => {
+                    if (role === 'user' && !isDataConnectedRef.current && !connRef.current?.open) {
+                        console.log("Data connection not open, retrying...");
+                        connectData();
+                    }
+                }, 5000);
+
+                p.on('close', () => clearInterval(retryInterval));
+                p.on('error', () => { }); // Handle errors separately
             }
         });
 

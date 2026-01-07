@@ -89,6 +89,33 @@ const ReviewerDashboard = () => {
                         )}
                     </button>
                     <button
+                        onClick={() => {
+                            if (sendData) {
+                                sendData({ type: 'PING' });
+                                alert("Sync request sent to user");
+                            }
+                        }}
+                        className="glass-btn"
+                        title="Refresh Data Sync"
+                        style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            background: 'rgba(255,165,0,0.4)',
+                            border: '2px solid rgba(255,165,0,0.3)'
+                        }}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                    <button
                         onClick={handleEndCall}
                         className="glass-btn glass-btn-danger"
                         title="End Call"
@@ -109,6 +136,27 @@ const ReviewerDashboard = () => {
                     </button>
                 </div>
             </div>
+
+            {!isDataConnected && (
+                <div style={{
+                    background: 'rgba(255, 193, 7, 0.2)',
+                    color: '#ffc107',
+                    padding: '10px 20px',
+                    borderRadius: 8,
+                    marginBottom: 20,
+                    textAlign: 'center',
+                    border: '1px solid rgba(255, 193, 7, 0.3)',
+                    fontWeight: 'bold'
+                }}>
+                    ⚠️ Data channel disconnected. Live measurements and plan sync may be delayed.
+                    <button
+                        onClick={() => sendData?.({ type: 'PING' })}
+                        style={{ marginLeft: 10, background: '#ffc107', color: 'black', border: 'none', padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}
+                    >
+                        Try Reconnect
+                    </button>
+                </div>
+            )}
 
             <div style={{
                 display: 'grid',
