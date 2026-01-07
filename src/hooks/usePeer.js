@@ -15,6 +15,18 @@ export const usePeer = (role, code, arActive = false) => {
     const [facingMode, setFacingMode] = useState('environment');
     const [isMuted, setIsMuted] = useState(false);
 
+    // Refs to track state for persistent event handlers without re-triggering Peer initialization
+    const facingModeRef = useRef(facingMode);
+    const arActiveRef = useRef(arActive);
+
+    useEffect(() => {
+        facingModeRef.current = facingMode;
+    }, [facingMode]);
+
+    useEffect(() => {
+        arActiveRef.current = arActive;
+    }, [arActive]);
+
     function getVideoConstraints(mode, isAR) {
         const constraints = {
             facingMode: { ideal: mode },
@@ -96,7 +108,7 @@ export const usePeer = (role, code, arActive = false) => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: getVideoConstraints(facingMode, arActive)
+                video: getVideoConstraints(facingModeRef.current, arActiveRef.current)
             });
             localStreamRef.current = stream;
             const outgoingCall = p.call(targetId, stream);
@@ -105,7 +117,7 @@ export const usePeer = (role, code, arActive = false) => {
             console.error("Media Error:", e);
             setStatus("Media Error: " + e.message);
         }
-    }, [facingMode, arActive, setupCallEvents]);
+    }, [setupCallEvents]); // Removed facingMode, arActive dependencies
 
     const refreshMediaTracks = useCallback(async () => {
         try {
@@ -114,7 +126,7 @@ export const usePeer = (role, code, arActive = false) => {
             }
             const newStream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: getVideoConstraints(facingMode, arActive)
+                video: getVideoConstraints(facingModeRef.current, arActiveRef.current)
             });
             localStreamRef.current = newStream;
             if (call && call.peerConnection) {
@@ -128,7 +140,7 @@ export const usePeer = (role, code, arActive = false) => {
         } catch (e) {
             console.error("Error refreshing media tracks:", e);
         }
-    }, [facingMode, arActive, call]);
+    }, [call]); // Only depend on call object
 
     useEffect(() => {
         if (!code) return;
@@ -198,7 +210,7 @@ export const usePeer = (role, code, arActive = false) => {
             console.log("Incoming call...", incomingCall);
             navigator.mediaDevices.getUserMedia({
                 audio: true,
-                video: getVideoConstraints(facingMode, arActive)
+                video: getVideoConstraints(facingModeRef.current, arActiveRef.current)
             })
                 .then(stream => {
                     localStreamRef.current = stream;
@@ -229,13 +241,13 @@ export const usePeer = (role, code, arActive = false) => {
             if (p._retryInterval) clearInterval(p._retryInterval);
             p.destroy();
         };
-    }, [role, code, startCall, setupCallEvents, setupDataEvents, facingMode, arActive]);
+    }, [role, code, startCall, setupCallEvents, setupDataEvents]); // Removed facingMode, arActive dependencies
 
     useEffect(() => {
         if (role === 'user' && call && call.peerConnection) {
             refreshMediaTracks();
         }
-    }, [arActive, role, call, refreshMediaTracks]);
+    }, [arActive, role, call, refreshMediaTracks, facingMode]); // Added facingMode to trigger refresh withoutPeer re-init
 
     const sendData = (payload) => {
         if (!conn) {

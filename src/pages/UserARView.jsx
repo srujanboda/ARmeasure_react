@@ -15,8 +15,8 @@ const UserARView = () => {
     const [showPlan, setShowPlan] = useState(false);
     const [isArActive, setIsArActive] = useState(false);
 
-    // Keep camera stream running - don't use arActive flag to avoid stream interruption
-    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic } = usePeer('user', code, false);
+    // Keep camera stream running - use isArActive to optimize constraints without session drop
+    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic } = usePeer('user', code, isArActive);
     const [streamStatus, setStreamStatus] = useState('');
 
     // Handle AR session start
