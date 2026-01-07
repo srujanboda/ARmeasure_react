@@ -28,6 +28,8 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
     const syncTimeoutRef = useRef(null);
     const pendingImageRef = useRef(null);
     const retryTimeoutRef = useRef(null);
+    const hasLoadedRef = useRef(false);
+    const lastSyncTimestampRef = useRef(0);
 
 
     const draw = useCallback(() => {
@@ -67,10 +69,13 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
         }
     }, [image, savedRooms, currentPoints]);
 
-    // Load persisted data from localStorage on mount
+    // Load persisted data from localStorage on mount (ONLY ONCE)
     useEffect(() => {
+        if (hasLoadedRef.current) return;
+
         const storageKey = `planParser_${role}`;
         const saved = localStorage.getItem(storageKey);
+
         if (saved) {
             try {
                 const data = JSON.parse(saved);
@@ -82,13 +87,8 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                         setIsSaved(true);
                         setStatus(role === 'user' ? "Loaded saved plan" : "Plan loaded");
 
-                        // If user role and connection is ready, auto-send to reviewer
-                        if (role === 'user' && isDataConnected && sendData) {
-                            console.log("Auto-sending saved image to reviewer");
-                            sendData({ type: 'PLAN_IMAGE', data: data.imageBase64 });
-                            setStatus("Saved plan loaded and sent to reviewer");
-                        } else if (role === 'user') {
-                            // Store for sending when connection is ready
+                        // If user role and connection is already ready, store for the sync effect
+                        if (role === 'user' && !isDataConnected) {
                             pendingImageRef.current = data.imageBase64;
                         }
                     };
@@ -104,7 +104,8 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
                 console.error("Error loading saved data:", e);
             }
         }
-    }, [role, isDataConnected, sendData]);
+        hasLoadedRef.current = true;
+    }, [role]); // Only depend on role, not connection status
 
     // Persist data to localStorage whenever it changes (debounced & yielding)
     const saveTimeoutRef = useRef(null);
@@ -158,6 +159,12 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
             };
             img.src = remoteData.data;
         } else if (remoteData.type === 'PLAN_SYNC') {
+            // Reviewer protection: If reviewer is actively drawing, don't overwrite with remote data
+            // unless the remote data is obviously the master source (e.g. from user clearing)
+            if (role === 'reviewer' && currentPoints.length > 0 && !(remoteData.currentPoints?.length === 0 && remoteData.savedRooms?.length === 0)) {
+                return;
+            }
+
             setSavedRooms(remoteData.savedRooms || []);
             setCurrentPoints(remoteData.currentPoints || []);
             if (role === 'reviewer') {
@@ -213,8 +220,9 @@ const PlanParser = ({ role = 'reviewer', sendData, remoteData, isDataConnected =
     // Auto-sync image when connection becomes ready
     useEffect(() => {
         if (role === 'user' && isDataConnected && sendData && pendingImageRef.current) {
-            sendData({ type: 'PLAN_IMAGE', data: pendingImageRef.current });
+            const base64 = pendingImageRef.current;
             pendingImageRef.current = null;
+            sendData({ type: 'PLAN_IMAGE', data: base64 });
             setStatus("Plan synced with reviewer");
         }
     }, [isDataConnected, sendData, role]);
