@@ -13,26 +13,40 @@ const UserARView = () => {
     const [arStatus, setArStatus] = useState("Initializing AR...");
     const [showPlan, setShowPlan] = useState(false);
     const [isArActive, setIsArActive] = useState(false);
+    const [isScreenSharing, setIsScreenSharing] = useState(false);
 
     // Keep camera stream running - don't use arActive flag to avoid stream interruption
-    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic } = usePeer('user', code, false);
+    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic, startScreenShare } = usePeer('user', code, false);
     const [streamStatus, setStreamStatus] = useState('');
 
-    // Handle AR session start - camera stream keeps running to reviewer
+    // Handle AR session start - prompt user to share screen
     const handleARSessionStart = () => {
-        console.log("AR Session started - camera stream continues to reviewer");
+        console.log("AR Session started");
         setArStatus("AR Session Active");
         setIsArActive(true);
-        setStreamStatus("AR Active • Camera streaming to reviewer");
+        setStreamStatus("AR Active • Tap 'Share Screen' for reviewer to see");
     };
 
     // Handle AR session end
     const handleARSessionEnd = () => {
         console.log("AR Session ended");
         setIsArActive(false);
+        setIsScreenSharing(false);
         setStreamStatus("AR Ended");
-        // Navigate away or stay based on your preference
         navigate('/');
+    };
+
+    // Handle screen sharing
+    const handleShareScreen = async () => {
+        setStreamStatus("Starting screen share...");
+        const result = await startScreenShare();
+
+        if (result.success) {
+            setIsScreenSharing(true);
+            setStreamStatus("✓ Screen sharing active");
+        } else {
+            setStreamStatus("Screen share failed: " + result.error);
+        }
     };
 
     const handleEndCall = () => {
@@ -89,15 +103,47 @@ const UserARView = () => {
                     left: 20,
                     zIndex: 10,
                     padding: '8px 16px',
-                    background: streamStatus.includes('ERROR') ? 'rgba(220,53,69,0.9)' : streamStatus.includes('✓') ? 'rgba(40,167,69,0.9)' : 'rgba(0,0,0,0.7)',
+                    background: streamStatus.includes('ERROR') || streamStatus.includes('failed') ? 'rgba(220,53,69,0.9)' : streamStatus.includes('✓') ? 'rgba(40,167,69,0.9)' : 'rgba(0,0,0,0.7)',
                     borderRadius: 20,
                     color: '#fff',
                     fontSize: 12,
                     fontWeight: 600,
-                    maxWidth: 200
+                    maxWidth: 250
                 }}>
                     {streamStatus}
                 </div>
+            )}
+
+            {/* Share Screen Button - Shows when AR is active but not yet sharing */}
+            {isArActive && !isScreenSharing && (
+                <button
+                    onClick={handleShareScreen}
+                    className="glass-btn"
+                    style={{
+                        position: 'absolute',
+                        bottom: 80,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 10,
+                        padding: '12px 24px',
+                        background: 'rgba(0,191,255,0.8)',
+                        border: '2px solid rgba(0,191,255,0.5)',
+                        borderRadius: 25,
+                        color: '#fff',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8
+                    }}
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                    Share Screen
+                </button>
             )}
 
             {/* Top Right Controls - Mic and Power Off */}

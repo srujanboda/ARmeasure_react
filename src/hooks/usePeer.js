@@ -180,6 +180,61 @@ export const usePeer = (role, code, arActive = false) => {
         }
     };
 
+    // Start screen sharing and replace video track
+    const startScreenShare = async () => {
+        try {
+            // Check if getDisplayMedia is supported
+            if (!navigator.mediaDevices.getDisplayMedia) {
+                console.error("Screen sharing not supported on this device");
+                return { success: false, error: "Screen sharing not supported" };
+            }
+
+            console.log("Requesting screen share...");
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 15 }
+                },
+                audio: false // We keep using the original audio
+            });
+
+            const screenTrack = screenStream.getVideoTracks()[0];
+            if (!screenTrack) {
+                return { success: false, error: "No video track from screen share" };
+            }
+
+            // Handle screen share stop (when user clicks "Stop sharing")
+            screenTrack.onended = () => {
+                console.log("Screen share ended by user");
+                setStatus("Screen share ended");
+            };
+
+            // Replace the video track in the peer connection
+            if (call && call.peerConnection) {
+                const senders = call.peerConnection.getSenders();
+                const videoSender = senders.find(s => s.track?.kind === 'video' || s.track === null);
+
+                if (videoSender) {
+                    await videoSender.replaceTrack(screenTrack);
+                    console.log("Screen share track replaced successfully");
+                    setStatus("Screen sharing active");
+                    return { success: true };
+                } else {
+                    return { success: false, error: "No video sender found" };
+                }
+            } else {
+                return { success: false, error: "No active call" };
+            }
+        } catch (e) {
+            console.error("Screen share error:", e);
+            if (e.name === 'NotAllowedError') {
+                return { success: false, error: "Permission denied" };
+            }
+            return { success: false, error: e.message };
+        }
+    };
+
     // Replace video track with a new track (e.g., canvas stream for AR)
     const replaceVideoTrack = async (newVideoTrack) => {
         console.log("replaceVideoTrack called, call:", !!call, "peerConnection:", !!call?.peerConnection, "newTrack:", !!newVideoTrack);
@@ -289,5 +344,5 @@ export const usePeer = (role, code, arActive = false) => {
         setStatus("Call Ended Manually");
     };
 
-    return { peer, call, remoteStream, status, endCall, sendData, data, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic, replaceVideoTrack };
+    return { peer, call, remoteStream, status, endCall, sendData, data, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic, replaceVideoTrack, startScreenShare };
 };
