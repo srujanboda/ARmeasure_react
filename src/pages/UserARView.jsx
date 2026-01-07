@@ -36,7 +36,9 @@ const UserARView = () => {
 
     // Sync measurement data to reviewer when stats change during AR
     useEffect(() => {
+        console.log("Stats changed:", stats, "isArActive:", isArActive, "isDataConnected:", isDataConnected);
         if (isArActive && isDataConnected && sendData) {
+            console.log("Sending MEASUREMENT_SYNC to reviewer");
             // Send measurement data to reviewer
             sendData({
                 type: 'MEASUREMENT_SYNC',
