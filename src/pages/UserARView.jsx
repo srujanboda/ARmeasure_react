@@ -79,15 +79,29 @@ const UserARView = () => {
     // --- STREAM SWITCHING LOGIC ---
     useEffect(() => {
         if (isArActive && spectatorCanvasRef.current) {
-            console.log("Switching to Spectator Canvas Stream...");
-            const stream = spectatorCanvasRef.current.captureStream(20);
-            const videoTrack = stream.getVideoTracks()[0];
-            if (videoTrack) {
-                replaceVideoTrack(videoTrack).then(success => {
-                    if (success) console.log("Reviewer is now seeing SPECATOR AR view");
-                    else console.error("Failed to switch to spectator stream");
-                });
-            }
+            console.log("Preparing Spectator Canvas Stream...");
+            setStreamStatus("Initializing Reviewer Stream...");
+
+            // Short delay to ensure WebXR session is stable and rendering pixels
+            const timer = setTimeout(() => {
+                const stream = spectatorCanvasRef.current.captureStream(20);
+                const videoTrack = stream.getVideoTracks()[0];
+                if (videoTrack) {
+                    replaceVideoTrack(videoTrack).then(success => {
+                        if (success) {
+                            console.log("Reviewer is now seeing SPECATOR AR view");
+                            setStreamStatus("LIVE • AR View shared with reviewer");
+                        } else {
+                            console.error("Failed to switch to spectator stream");
+                            setStreamStatus("Stream Error: Reviewer might see black");
+                        }
+                    });
+                }
+            }, 1500); // 1.5s delay to be safe
+
+            return () => clearTimeout(timer);
+        } else if (!isArActive) {
+            setStreamStatus("");
         }
     }, [isArActive, replaceVideoTrack]);
 
@@ -142,6 +156,11 @@ const UserARView = () => {
                 <div style={{ fontSize: 8, color: arStatus.includes('Active') ? '#0f0' : '#fff', opacity: 0.5, marginTop: 4 }}>
                     {arStatus}
                 </div>
+                {streamStatus && (
+                    <div style={{ fontSize: 9, color: '#00BFFF', fontWeight: 600, marginTop: 4, background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4 }}>
+                        {streamStatus}
+                    </div>
+                )}
             </div >
 
             {/* Top Right Controls - Mic and Power Off */}

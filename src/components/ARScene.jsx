@@ -108,7 +108,10 @@ const ARScene = forwardRef((props, ref) => {
             mgr.spectatorCanvas = document.createElement('canvas');
             mgr.spectatorCanvas.width = 640;
             mgr.spectatorCanvas.height = 480;
-            mgr.spectatorCanvas.style.display = 'none';
+            // Use off-screen positioning instead of display:none to ensure captureStream works
+            mgr.spectatorCanvas.style.position = 'fixed';
+            mgr.spectatorCanvas.style.left = '-1000px';
+            mgr.spectatorCanvas.style.top = '-1000px';
             document.body.appendChild(mgr.spectatorCanvas);
 
             mgr.spectatorRenderer = new THREE.WebGLRenderer({
