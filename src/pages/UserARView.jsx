@@ -16,7 +16,7 @@ const UserARView = () => {
     const [isArActive, setIsArActive] = useState(false);
 
     // Keep camera stream running - fixed resolution for now to avoid session interruption
-    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic } = usePeer('user', code, false);
+    const { status: peerStatus, endCall, sendData, data: remoteData, isDataConnected, toggleCamera, facingMode, isMuted, toggleMic, replaceVideoTrack } = usePeer('user', code, isArActive);
     const [streamStatus, setStreamStatus] = useState('');
 
     // Handle AR session start
@@ -75,6 +75,26 @@ const UserARView = () => {
             });
         }
     }, [isArActive, isDataConnected, sendData]);
+    // --- STREAM SWITCHING LOGIC ---
+    // When AR starts, switch reviewer to the canvas stream (which now has the background camera fixed)
+    useEffect(() => {
+        if (isArActive) {
+            console.log("Switching to AR Canvas Stream...");
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                const stream = canvas.captureStream(20); // 20 FPS for smooth AR
+                const videoTrack = stream.getVideoTracks()[0];
+                if (videoTrack) {
+                    replaceVideoTrack(videoTrack).then(success => {
+                        if (success) console.log("Reviewer is now seeing AR canvas");
+                        else console.error("Failed to switch to AR canvas");
+                    });
+                }
+            }
+        } else {
+            console.log("Reverting to front camera (handled by page exit/hook)");
+        }
+    }, [isArActive, replaceVideoTrack]);
 
     const handleEndCall = () => {
         endCall();

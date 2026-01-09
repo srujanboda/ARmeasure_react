@@ -31,7 +31,7 @@ export class SceneManager {
 
         const arButton = ARButton.createButton(this.renderer, {
             requiredFeatures: ['hit-test'],
-            optionalFeatures: ['dom-overlay'],
+            optionalFeatures: ['dom-overlay', 'camera-access', 'depth-sensing'],
             domOverlay: { root: overlayRoot || document.body }
         });
         arButton.classList.add('custom-ar-button');

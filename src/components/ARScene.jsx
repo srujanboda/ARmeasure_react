@@ -10,7 +10,9 @@ const ARScene = forwardRef((props, ref) => {
         sceneManager: null,
         measureManager: null,
         interactionManager: null,
-        currentUnit: 'm'
+        currentUnit: 'm',
+        xrWebGLBinding: null,
+        cameraTexture: null
     });
 
     const [statusText, setStatusText] = useState("Initializing AR...");
@@ -125,6 +127,34 @@ const ARScene = forwardRef((props, ref) => {
         // Dynamic distance update in UI pill
         if (pos || mgr.measureManager.getPointCount() > 0) {
             updateUI(pos);
+        }
+
+        // --- AR Background Rendering Fix ---
+        // This ensures the camera feed is drawn to the canvas so WebRTC can capture it
+        if (session && frame && window.XRWebGLBinding) {
+            if (!mgr.xrWebGLBinding) {
+                mgr.xrWebGLBinding = new XRWebGLBinding(session, mgr.sceneManager.renderer.getContext());
+            }
+
+            const viewerPose = frame.getViewerPose(mgr.sceneManager.renderer.xr.getReferenceSpace());
+            if (viewerPose && viewerPose.views && viewerPose.views.length > 0) {
+                const view = viewerPose.views[0]; // Usually just one for mobile AR
+                if (view.camera) {
+                    const texture = mgr.xrWebGLBinding.getCameraImage(view.camera);
+
+                    // Update scene background with camera texture
+                    if (!mgr.cameraTexture) {
+                        mgr.cameraTexture = new THREE.Texture(texture);
+                        mgr.cameraTexture.mapping = THREE.UVMapping;
+                    } else {
+                        mgr.cameraTexture.image = texture; // Note: This might need specific sync for WebGLTexture
+                    }
+
+                    // Simple approach: set scene background. 
+                    mgr.sceneManager.scene.background = mgr.cameraTexture;
+                    mgr.cameraTexture.needsUpdate = true;
+                }
+            }
         }
     };
 

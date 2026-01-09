@@ -12,7 +12,7 @@ export const usePeer = (role, code, arActive = false) => {
     const localStreamRef = useRef(null);
     const isDataConnectedRef = useRef(false);
     const connRef = useRef(null);
-    const [facingMode, setFacingMode] = useState('environment');
+    const [facingMode, setFacingMode] = useState('user');
     const [isMuted, setIsMuted] = useState(false);
 
     // Refs to track state for persistent event handlers without re-triggering Peer initialization
