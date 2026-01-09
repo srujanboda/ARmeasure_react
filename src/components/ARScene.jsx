@@ -12,7 +12,12 @@ const ARScene = forwardRef((props, ref) => {
         interactionManager: null,
         currentUnit: 'm',
         xrWebGLBinding: null,
-        cameraTexture: null
+        cameraTexture: null,
+        spectatorCanvas: null,
+        spectatorRenderer: null,
+        backgroundScene: null,
+        backgroundCamera: null,
+        backgroundMesh: null
     });
 
     const [statusText, setStatusText] = useState("Initializing AR...");
@@ -97,6 +102,36 @@ const ARScene = forwardRef((props, ref) => {
         document.body.addEventListener('click', (e) => {
             if (!e.target.closest('button') && !e.target.closest('input')) handleTap();
         });
+
+        // --- SPECTATOR CANVAS SETUP ---
+        if (!mgr.spectatorCanvas) {
+            mgr.spectatorCanvas = document.createElement('canvas');
+            mgr.spectatorCanvas.width = 640;
+            mgr.spectatorCanvas.height = 480;
+            mgr.spectatorCanvas.style.display = 'none';
+            document.body.appendChild(mgr.spectatorCanvas);
+
+            mgr.spectatorRenderer = new THREE.WebGLRenderer({
+                canvas: mgr.spectatorCanvas,
+                antialias: false
+            });
+            mgr.spectatorRenderer.setPixelRatio(1);
+            mgr.spectatorRenderer.setSize(640, 480);
+            mgr.spectatorRenderer.autoClear = false;
+
+            // --- Background Shader Setup ---
+            mgr.backgroundScene = new THREE.Scene();
+            mgr.backgroundCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            mgr.backgroundMesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x000000 }));
+            mgr.backgroundScene.add(mgr.backgroundMesh);
+        }
+
+        // Notify parent about the spectator stream source
+        if (propsRef.current.onSpectatorCanvasReady) {
+            propsRef.current.onSpectatorCanvasReady(mgr.spectatorCanvas);
+        }
     };
 
     const handleTap = () => {
@@ -129,31 +164,46 @@ const ARScene = forwardRef((props, ref) => {
             updateUI(pos);
         }
 
-        // --- AR Background Rendering Fix ---
-        // This ensures the camera feed is drawn to the canvas so WebRTC can capture it
-        if (session && frame && window.XRWebGLBinding) {
-            if (!mgr.xrWebGLBinding) {
-                mgr.xrWebGLBinding = new XRWebGLBinding(session, mgr.sceneManager.renderer.getContext());
-            }
-
-            const viewerPose = frame.getViewerPose(mgr.sceneManager.renderer.xr.getReferenceSpace());
-            if (viewerPose && viewerPose.views && viewerPose.views.length > 0) {
-                const view = viewerPose.views[0]; // Usually just one for mobile AR
-                if (view.camera) {
-                    const texture = mgr.xrWebGLBinding.getCameraImage(view.camera);
-
-                    // Update scene background with camera texture
-                    if (!mgr.cameraTexture) {
-                        mgr.cameraTexture = new THREE.Texture(texture);
-                        mgr.cameraTexture.mapping = THREE.UVMapping;
-                    } else {
-                        mgr.cameraTexture.image = texture; // Note: This might need specific sync for WebGLTexture
-                    }
-
-                    // Simple approach: set scene background. 
-                    mgr.sceneManager.scene.background = mgr.cameraTexture;
-                    mgr.cameraTexture.needsUpdate = true;
+        // --- SPECTATOR MODE RENDERING ---
+        if (session && frame && window.XRWebGLBinding && mgr.spectatorRenderer) {
+            try {
+                if (!mgr.xrWebGLBinding) {
+                    mgr.xrWebGLBinding = new XRWebGLBinding(session, mgr.sceneManager.renderer.getContext());
                 }
+
+                const viewerPose = frame.getViewerPose(mgr.sceneManager.renderer.xr.getReferenceSpace());
+                if (viewerPose && viewerPose.views && viewerPose.views.length > 0) {
+                    const view = viewerPose.views[0];
+                    if (view.camera) {
+                        const webglTexture = mgr.xrWebGLBinding.getCameraImage(view.camera);
+
+                        // Inject raw WebGLTexture into Three.js
+                        if (!mgr.cameraTexture) {
+                            mgr.cameraTexture = new THREE.Texture();
+                        }
+                        const props = mgr.spectatorRenderer.properties.get(mgr.cameraTexture);
+                        props.__webglTexture = webglTexture;
+                        mgr.cameraTexture.needsUpdate = true;
+
+                        // Update background material
+                        mgr.backgroundMesh.material.map = mgr.cameraTexture;
+                        mgr.backgroundMesh.material.needsUpdate = true;
+
+                        // 1. Clear spectator renderer
+                        mgr.spectatorRenderer.clear();
+
+                        // 2. Render background (camera feed)
+                        mgr.spectatorRenderer.render(mgr.backgroundScene, mgr.backgroundCamera);
+
+                        // 3. Render 3D overlays (measurements) on top
+                        const originalBg = mgr.sceneManager.scene.background;
+                        mgr.sceneManager.scene.background = null;
+                        mgr.spectatorRenderer.render(mgr.sceneManager.scene, mgr.sceneManager.camera);
+                        mgr.sceneManager.scene.background = originalBg;
+                    }
+                }
+            } catch (err) {
+                console.error("Spectator Render Error:", err);
             }
         }
     };

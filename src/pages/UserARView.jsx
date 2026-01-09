@@ -12,6 +12,7 @@ const UserARView = () => {
     const [stats, setStats] = useState({ total: "0.00 m", count: 0 });
     const lastSyncTimeRef = useRef(0);
     const [arStatus, setArStatus] = useState("Initializing AR...");
+    const spectatorCanvasRef = useRef(null);
     const [showPlan, setShowPlan] = useState(false);
     const [isArActive, setIsArActive] = useState(false);
 
@@ -76,23 +77,17 @@ const UserARView = () => {
         }
     }, [isArActive, isDataConnected, sendData]);
     // --- STREAM SWITCHING LOGIC ---
-    // When AR starts, switch reviewer to the canvas stream (which now has the background camera fixed)
     useEffect(() => {
-        if (isArActive) {
-            console.log("Switching to AR Canvas Stream...");
-            const canvas = document.querySelector('canvas');
-            if (canvas) {
-                const stream = canvas.captureStream(20); // 20 FPS for smooth AR
-                const videoTrack = stream.getVideoTracks()[0];
-                if (videoTrack) {
-                    replaceVideoTrack(videoTrack).then(success => {
-                        if (success) console.log("Reviewer is now seeing AR canvas");
-                        else console.error("Failed to switch to AR canvas");
-                    });
-                }
+        if (isArActive && spectatorCanvasRef.current) {
+            console.log("Switching to Spectator Canvas Stream...");
+            const stream = spectatorCanvasRef.current.captureStream(20);
+            const videoTrack = stream.getVideoTracks()[0];
+            if (videoTrack) {
+                replaceVideoTrack(videoTrack).then(success => {
+                    if (success) console.log("Reviewer is now seeing SPECATOR AR view");
+                    else console.error("Failed to switch to spectator stream");
+                });
             }
-        } else {
-            console.log("Reverting to front camera (handled by page exit/hook)");
         }
     }, [isArActive, replaceVideoTrack]);
 
@@ -112,6 +107,7 @@ const UserARView = () => {
                 onStatsUpdate={setStats}
                 onSessionStart={handleARSessionStart}
                 onSessionEnd={handleARSessionEnd}
+                onSpectatorCanvasReady={(canvas) => { spectatorCanvasRef.current = canvas; }}
             />
 
             {/* Overlay UI - Top Center Pill */}

@@ -244,10 +244,15 @@ export const usePeer = (role, code, arActive = false) => {
     }, [role, code, startCall, setupCallEvents, setupDataEvents]); // Removed facingMode, arActive dependencies
 
     useEffect(() => {
+        // Suppress track refresh if AR is active for the user, as WebXR owns the camera
+        if (role === 'user' && arActive) {
+            console.log("suppressing media track refresh - WebXR in control");
+            return;
+        }
         if (role === 'user' && call && call.peerConnection) {
             refreshMediaTracks();
         }
-    }, [arActive, role, call, refreshMediaTracks, facingMode]); // Added facingMode to trigger refresh withoutPeer re-init
+    }, [arActive, role, call, refreshMediaTracks, facingMode]);
 
     const sendData = (payload) => {
         if (!conn) {
